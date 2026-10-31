@@ -1,0 +1,39 @@
+
+===== [nb201] 只靠操作计数的天花板（15625 个结构）=====
+  cifar10_acc      τ 上限 = 0.629（210 种计数组合）
+  词频（bow）cifar10_acc  τ 上限 = 0.629（210 种词频组合）
+
+===== [nb201] 线性探针（读出原结构的信息；edge_acc 瞎猜 = 0.20）=====
+                                  count_R2  edge_acc_mean  edge_acc_min  var_by_counts  var_by_onehot
+pythia410m_step0                     1.000          0.961         0.842          0.748          0.995
+pythia410m_step0_shuf                1.000          0.426         0.415          0.748          0.748
+pythia410m_step0_lines               1.000          0.993         0.955          0.357          0.994
+pythia410m_step0_shuf_lines          1.000          0.420         0.414          0.358          0.359
+pythia410m_step143000                0.999          0.999         0.996          0.471          0.754
+pythia410m_step143000_shuf           0.999          0.379         0.374          0.471          0.471
+pythia410m_step143000_lines          0.999          1.000         0.998          0.233          0.796
+pythia410m_step143000_shuf_lines     0.999          0.364         0.355          0.233          0.234
+
+===== [transnas] 只靠操作计数的天花板（4096 个结构）=====
+  class_scene      τ 上限 = 0.563（84 种计数组合）
+  class_object     τ 上限 = 0.495（84 种计数组合）
+  jigsaw           τ 上限 = 0.481（84 种计数组合）
+  room_layout      τ 上限 = 0.510（84 种计数组合）
+  segmentsemantic  τ 上限 = 0.530（84 种计数组合）
+  normal           τ 上限 = 0.558（84 种计数组合）
+  autoencoder      τ 上限 = 0.424（84 种计数组合）
+  词频（bow）class_scene  τ 上限 = 0.563（84 种词频组合）
+  词频（bow）class_object τ 上限 = 0.495（84 种词频组合）
+  词频（bow）jigsaw       τ 上限 = 0.481（84 种词频组合）
+  词频（bow）room_layout  τ 上限 = 0.510（84 种词频组合）
+  词频（bow）segmentsemantic τ 上限 = 0.530（84 种词频组合）
+  词频（bow）normal       τ 上限 = 0.558（84 种词频组合）
+  词频（bow）autoencoder  τ 上限 = 0.424（84 种词频组合）
+
+===== [transnas] 线性探针（读出原结构的信息；edge_acc 瞎猜 = 0.25）=====
+                        count_R2  edge_acc_mean  edge_acc_min  var_by_counts  var_by_onehot
+bow                          1.0          0.467         0.460          1.000          1.000
+pythia410m_step0             1.0          0.986         0.936          0.749          0.995
+pythia410m_step143000        1.0          1.000         0.999          0.423          0.734
+qwen25_0.5b                  1.0          1.000         0.998          0.471          0.756
+pythia410m_step0_lines       1.0          0.998         0.989          0.350          0.995

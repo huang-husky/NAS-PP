@@ -1,0 +1,73 @@
+
+===== A. N@10（随机森林，中位数；越小越好）=====
+
+[nb101 | test_acc]
+n_train                      10    50    100   500   1000
+features                                                 
+onehot                       41.0  17.0  14.0   9.5  11.0
+code_bow                     46.0  13.5  13.5  11.0  13.0
+code_pythia410m_step0        34.0  19.0  12.0  12.0  12.5
+code_pythia410m_step143000   50.5  53.0  23.0  14.0  18.5
+sorted_bow                   46.0  78.5  63.5  32.0  41.5
+sorted_pythia410m_step0     118.5  60.5  42.0  14.0  43.5
+posword_bow                  43.0  16.5  10.0   9.5   9.0
+posword_pythia410m_step0     61.5  18.5  11.5  15.0  14.5
+
+[nb201 | cifar10_acc]
+n_train                      10    50    100   500   1000
+features                                                 
+onehot                      138.5  15.0   2.0   1.0   1.0
+code_bow                     99.5  17.5  21.5  25.5  20.0
+code_pythia410m_step0       133.0  23.0  27.0   5.0  12.5
+code_pythia410m_step143000   61.0  11.5   8.0   1.0   1.0
+sorted_bow                   99.0  18.5  29.5  20.5  20.0
+sorted_pythia410m_step0     152.0  22.0  27.0  18.5  11.5
+posword_bow                  83.5  16.5   2.0   1.0   1.0
+posword_pythia410m_step0    116.0  18.0   2.0   1.0   1.0
+
+[transnas | autoencoder]
+n_train                      10     50     100   500   1000
+features                                                   
+onehot                       73.0   97.5   74.0  65.0  36.0
+code_bow                    128.0   73.0   83.5  70.5  57.0
+code_pythia410m_step0       324.5   50.5  104.0  35.5  41.0
+code_pythia410m_step143000  142.5   77.5   66.5  28.5  40.5
+sorted_bow                  274.5  112.0  113.5  68.5  60.0
+sorted_pythia410m_step0      96.5   77.5   93.0  65.0  58.0
+posword_bow                 137.0  115.0   74.0  58.5  20.0
+posword_pythia410m_step0    123.0   71.0   50.0  38.0  13.0
+
+[transnas | class_scene]
+n_train                      10    50    100   500   1000
+features                                                 
+onehot                      150.0  29.5  12.0   9.5   8.5
+code_bow                    123.0  48.0  49.0  49.5  20.0
+code_pythia410m_step0       110.5  44.5  23.5  34.5  22.5
+code_pythia410m_step143000  118.0  40.0  19.5  19.5   1.0
+sorted_bow                  144.0  48.0  50.0  49.5  21.5
+sorted_pythia410m_step0     116.0  48.0  47.0  42.0  34.5
+posword_bow                 150.0  26.0  14.0  14.0  10.5
+posword_pythia410m_step0     86.0  26.0  22.5  21.5   5.5
+
+[transnas | segmentsemantic]
+n_train                      10    50    100   500   1000
+features                                                 
+onehot                       21.5  31.5  34.5   6.0   7.0
+code_bow                    154.0  28.0  33.0  23.0  18.5
+code_pythia410m_step0        74.0  47.0  31.5  21.5  32.0
+code_pythia410m_step143000   64.5  26.5  23.5  10.0   6.5
+sorted_bow                  107.5  52.5  29.5  22.0  18.5
+sorted_pythia410m_step0     174.0  43.5  39.0  25.0  13.5
+posword_bow                  25.5  30.5  29.0   6.0   7.0
+posword_pythia410m_step0     87.0  32.0  31.5   9.0   8.0
+  log10(N@10)：pythia410m_step0 和词频的相关系数 r = 0.892（125 个点）
+  log10(N@10)：pythia410m_step143000 和词频的相关系数 r = 0.686（125 个点）
+
+  只看分组的 N@10 最好情况（上帝视角，整个结构池；括号里是 N@10 = 1 的概率）
+  nb201    cifar10_acc      只看计数：   1.0（50%）   只看 code 词频：   1.0（50%）   池子大小 5000
+  transnas class_scene      只看计数：  45.0（0%）   只看 code 词频：  45.0（0%）   池子大小 4096
+  transnas segmentsemantic  只看计数：   2.0（0%）   只看 code 词频：   2.0（0%）   池子大小 4096
+  transnas autoencoder      只看计数：  78.0（0%）   只看 code 词频：  78.0（0%）   池子大小 4096
+  nb101    test_acc         只看计数：  15.0（27%）   只看 code 词频：   1.0（100%）   池子大小 5000
+
+===== B. 模拟搜索（随机森林预测器，每次测 10 个；数字 = 找到的最好结构在整个池子里的名次，中位数）=====

@@ -1,0 +1,16 @@
+# 太大的东西：模型、特征、原始数据
+llm_demo/models/
+llm_demo/features/
+llm_demo/features_3000/
+data_raw/
+predictor_lab/data/nasbench101.csv
+
+# 运行日志和缓存
+*.log
+__pycache__/
+*.pyc
+
+# 编辑器和本地配置
+.idea/
+.claude/
+~$*
