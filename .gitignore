@@ -14,3 +14,11 @@ __pycache__/
 .idea/
 .claude/
 ~$*
+# 文档不进仓库（汇报、论文、PPT 等，只留在本地）
+*.pdf
+*.doc
+*.docx
+*.ppt
+*.pptx
+*.xls
+*.xlsx
