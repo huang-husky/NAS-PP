@@ -64,7 +64,45 @@ def cell_text(arch, fmt):
         return " ".join(parts)
     if fmt == "posword":
         return "cell: " + " ".join(WORDS[k * len(CELL_OPS) + CELL_OPS.index(op)] for k, op in enumerate(arch))
+    if fmt == "cole":
+        return cole_text(arch)
     raise ValueError(fmt)
+
+
+# ---------------------------------------------------------------- COLE 论文的写法（只用于 NB201 / TransNAS）
+# 照着 COLE（Somu 等，GECCO 2026）公开代码 stringify_utils.py 里的 to_pytorch_code 重写，
+# 用它的 'helper' 模式（论文图 2 的样子）：每条边一个专门的名字 self.op_<起点>_<终点>，
+# 无连接（none）直接省略，跳连写成 "+ node_<起点>"。
+# 这样"哪条边放了什么"会改变 op_0_2、node_1 这些词出现的次数：位置信息进到了词频里。
+
+COLE_HELPER = "\n".join([
+    "class ReLU_Conv2d_BatchNorm(nn.Module):",
+    "    def __init__(self, channels, kernel_size, stride, padding):",
+    "        super().__init__()",
+    "        self.op = nn.Sequential(",
+    "            nn.ReLU(inplace=False),",
+    "            nn.Conv2d(channels, channels, kernel_size, stride=stride, padding=padding, bias=False),",
+    "            nn.BatchNorm2d(channels)",
+    "        )",
+    "    ",
+    "    def forward(self, x):",
+    "        return self.op(x)"])
+COLE_OP = {"avg_pool_3x3": "nn.AvgPool2d(kernel_size=3, stride=1, padding=1)",
+           "nor_conv_1x1": "ReLU_Conv2d_BatchNorm(channels, kernel_size=1, stride=1, padding=0)",
+           "nor_conv_3x3": "ReLU_Conv2d_BatchNorm(channels, kernel_size=3, stride=1, padding=1)"}
+
+
+def cole_text(arch):
+    edges = [(s, d, op) for (s, d), op in zip(CELL_EDGES, arch)]
+    lines = ["class Cell(nn.Module):", "    def __init__(self, channels):", "        super().__init__()"]
+    lines += [f"        self.op_{s}_{d} = {COLE_OP[op]}" for s, d, op in edges if op in COLE_OP]
+    lines += ["", "    def forward(self, x):", "        node_0 = x"]
+    for target in (1, 2, 3):
+        incoming = [f"node_{s}" if op == "skip_connect" else f"self.op_{s}_{d}(node_{s})"
+                    for s, d, op in edges if d == target and op != "none"]
+        lines.append(f"        node_{target} = " + (" + ".join(incoming) if incoming else "torch.zeros_like(node_0)"))
+    lines.append("        return node_3")
+    return COLE_HELPER + "\n\n" + "\n".join(lines)
 
 
 # ---------------------------------------------------------------- NB101（任意连线的 DAG）

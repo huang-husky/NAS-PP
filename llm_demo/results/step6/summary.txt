@@ -71,3 +71,98 @@ posword_pythia410m_step0     87.0  32.0  31.5   9.0   8.0
   nb101    test_acc         只看计数：  15.0（27%）   只看 code 词频：   1.0（100%）   池子大小 5000
 
 ===== B. 模拟搜索（随机森林预测器，每次测 10 个；数字 = 找到的最好结构在整个池子里的名次，中位数）=====
+
+[nb101 | test_acc]
+queries                        50   100   200  找到第一的比例@200
+features                                                  
+onehot                       10.0   4.0   2.5         0.44
+counts+onehot                 6.0   4.0   1.5         0.50
+code_bow                      4.0   3.5   1.0         0.58
+code_pythia410m_step0         6.0   3.0   1.0         0.66
+code_pythia410m_step143000   22.0  12.0   4.0         0.16
+posword_pythia410m_step0     21.5   5.5   3.0         0.34
+code_qwen25_0.5b             14.0   8.0   3.0         0.46
+random                      104.0  43.0  22.0         0.04
+  counts+onehot 比 one-hot 更好的次数 20/50，更差 9，p=0.062
+  code_bow 比 one-hot 更好的次数 25/50，更差 11，p=0.0079
+  code_pythia410m_step0 比 one-hot 更好的次数 24/50，更差 8，p=0.003
+  code_pythia410m_step143000 比 one-hot 更好的次数 17/50，更差 25，p=0.56
+  posword_pythia410m_step0 比 one-hot 更好的次数 18/50，更差 18，p=0.55
+  code_qwen25_0.5b 比 one-hot 更好的次数 24/50，更差 16，p=0.15
+  random 比 one-hot 更好的次数 7/50，更差 42，p=1.7e-08
+
+[nb201 | cifar10_acc]
+queries                       50   100   200  找到第一的比例@200
+features                                                 
+onehot                      15.0   3.5   2.0         0.42
+counts+onehot               13.5   2.0   1.0         0.58
+code_bow                    12.0   1.0   1.0         0.80
+code_pythia410m_step0       14.0   1.0   1.0         0.82
+code_pythia410m_step143000  12.5   1.0   1.0         0.90
+posword_pythia410m_step0    15.0   2.5   1.0         0.66
+code_qwen25_0.5b             9.0   1.0   1.0         0.96
+random                      76.5  33.0  18.0         0.00
+  counts+onehot 比 one-hot 更好的次数 17/50，更差 8，p=0.085
+  code_bow 比 one-hot 更好的次数 28/50，更差 6，p=0.00024
+  code_pythia410m_step0 比 one-hot 更好的次数 29/50，更差 4，p=2.1e-05
+  code_pythia410m_step143000 比 one-hot 更好的次数 28/50，更差 1，p=1.9e-05
+  posword_pythia410m_step0 比 one-hot 更好的次数 27/50，更差 7，p=0.00034
+  code_qwen25_0.5b 比 one-hot 更好的次数 29/50，更差 1，p=5.5e-06
+  random 比 one-hot 更好的次数 10/50，更差 39，p=0.0041
+
+[transnas | autoencoder]
+queries                       50   100   200  找到第一的比例@200
+features                                                 
+onehot                      14.0  10.0   5.0         0.06
+counts+onehot               14.0   7.0   4.0         0.10
+code_bow                    17.5  11.0   5.0         0.24
+code_pythia410m_step0       19.0  11.0   3.0         0.40
+code_pythia410m_step143000  16.0  10.0   5.0         0.30
+posword_pythia410m_step0    25.0   8.5   5.0         0.04
+code_qwen25_0.5b            23.0  11.0   4.0         0.02
+random                      38.0  24.0  17.5         0.06
+  counts+onehot 比 one-hot 更好的次数 26/50，更差 7，p=0.0099
+  code_bow 比 one-hot 更好的次数 24/50，更差 20，p=0.82
+  code_pythia410m_step0 比 one-hot 更好的次数 36/50，更差 11，p=0.0021
+  code_pythia410m_step143000 比 one-hot 更好的次数 28/50，更差 18，p=0.17
+  posword_pythia410m_step0 比 one-hot 更好的次数 26/50，更差 13，p=0.24
+  code_qwen25_0.5b 比 one-hot 更好的次数 29/50，更差 14，p=0.37
+  random 比 one-hot 更好的次数 10/50，更差 38，p=4.2e-07
+
+[transnas | class_scene]
+queries                       50   100   200  找到第一的比例@200
+features                                                 
+onehot                      14.0   7.0   4.0         0.28
+counts+onehot               17.0   7.0   2.0         0.44
+code_bow                    11.0   2.0   1.0         0.60
+code_pythia410m_step0       11.5   4.0   1.0         0.64
+code_pythia410m_step143000  10.0   1.0   1.0         0.80
+posword_pythia410m_step0    16.0  10.0   2.0         0.40
+code_qwen25_0.5b            16.5   5.5   1.0         0.76
+random                      64.0  36.5  13.0         0.02
+  counts+onehot 比 one-hot 更好的次数 23/50，更差 7，p=0.046
+  code_bow 比 one-hot 更好的次数 28/50，更差 12，p=0.004
+  code_pythia410m_step0 比 one-hot 更好的次数 29/50，更差 8，p=0.00062
+  code_pythia410m_step143000 比 one-hot 更好的次数 29/50，更差 6，p=0.00021
+  posword_pythia410m_step0 比 one-hot 更好的次数 20/50，更差 15，p=0.29
+  code_qwen25_0.5b 比 one-hot 更好的次数 30/50，更差 6，p=0.0001
+  random 比 one-hot 更好的次数 9/50，更差 38，p=9e-06
+
+[transnas | segmentsemantic]
+queries                       50   100   200  找到第一的比例@200
+features                                                 
+onehot                       9.5   3.0   2.0         0.38
+counts+onehot                6.0   2.0   1.0         0.58
+code_bow                    15.0   2.0   1.0         0.80
+code_pythia410m_step0        7.0   1.0   1.0         0.86
+code_pythia410m_step143000   6.0   1.0   1.0         0.82
+posword_pythia410m_step0    17.5   2.0   1.0         0.56
+code_qwen25_0.5b            11.5   3.0   1.0         0.76
+random                      40.5  20.0  10.0         0.04
+  counts+onehot 比 one-hot 更好的次数 15/50，更差 2，p=0.0015
+  code_bow 比 one-hot 更好的次数 26/50，更差 8，p=0.12
+  code_pythia410m_step0 比 one-hot 更好的次数 27/50，更差 5，p=0.0025
+  code_pythia410m_step143000 比 one-hot 更好的次数 27/50，更差 4，p=0.0007
+  posword_pythia410m_step0 比 one-hot 更好的次数 24/50，更差 9，p=0.15
+  code_qwen25_0.5b 比 one-hot 更好的次数 25/50，更差 5，p=0.0031
+  random 比 one-hot 更好的次数 7/50，更差 41，p=1.4e-07

@@ -35,12 +35,14 @@ from progress import Progress
 
 HERE = Path(__file__).parent
 SEARCH_FEATS = ["onehot", "counts+onehot", "code_bow", "code_pythia410m_step0", "code_pythia410m_step143000",
-                "posword_pythia410m_step0", "random"]
+                "posword_pythia410m_step0", "code_qwen25_0.5b", "random"]
 LABEL = {"onehot": "one-hot", "counts+onehot": "counts + one-hot", "code_bow": "token counts (code)",
          "code_pythia410m_step0": "random Pythia (code)", "code_pythia410m_step143000": "trained Pythia (code)",
-         "posword_pythia410m_step0": "random Pythia (posword)", "random": "random search"}
+         "posword_pythia410m_step0": "random Pythia (posword)", "code_qwen25_0.5b": "Qwen2.5-0.5B (code)",
+         "random": "random search"}
 COLOR = {"onehot": "black", "counts+onehot": "tab:purple", "code_bow": "tab:brown", "code_pythia410m_step0": "tab:blue",
-         "code_pythia410m_step143000": "tab:red", "posword_pythia410m_step0": "tab:orange", "random": "gray"}
+         "code_pythia410m_step143000": "tab:red", "posword_pythia410m_step0": "tab:orange",
+         "code_qwen25_0.5b": "tab:green", "random": "gray"}
 
 
 # ---------------------------------------------------------------- A. N@10

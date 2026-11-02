@@ -58,6 +58,8 @@ def set_models(names):
 
 def label(llm):
     """pythia70m_step0 -> 'Pythia-70M, random'"""
+    if llm == "qwen25_0.5b":
+        return "Qwen2.5-0.5B, trained"
     size, step = llm.rsplit("_", 1)
     return f"Pythia-{size.removeprefix('pythia').upper()}, {'random' if step == 'step0' else 'trained'}"
 
@@ -178,35 +180,40 @@ def plot_sizes(agree, out_dir):
 
 def plot_scatter(all_df, out_dir):
     """主图：横轴词频 τ，纵轴 LLM τ，每个模型一张子图（随机森林）。上排随机初始化，下排训练完成。"""
-    sizes = list(dict.fromkeys(m.rsplit("_", 1)[0] for m in LLMS))
-    fig, axes = plt.subplots(2, len(sizes), figsize=(5.2 * len(sizes) + 1, 10.5), sharex=True, sharey=True,
-                             squeeze=False)
-    for col, size in enumerate(sizes):
-        for row, step in enumerate(["step0", "step143000"]):
-            llm, ax = f"{size}_{step}", axes[row, col]
-            title = label(llm)
-            if llm not in LLMS:
-                ax.set_visible(False)
-                continue
-            for space, df in all_df.items():
-                sub = df[df["head"] == "rf"]
-                mean = sub.groupby(["target", "features", "n_train"]).tau.mean()
-                for fmt in FORMATS:
-                    for (target, n), x in mean.xs(f"{fmt}_bow", level="features").items():
-                        y = mean.get((target, f"{fmt}_{llm}", n))
-                        if y is None:
-                            continue
-                        ax.scatter(x, y, color=FMT_COLOR[fmt], marker=SPACE_MARKER[space],
-                                   s=18 + 12 * np.log10(n) ** 2, alpha=0.8, edgecolor="white", linewidth=0.5)
-            lim = [0, 0.85]
-            ax.plot(lim, lim, color="gray", linestyle="--", linewidth=1)
-            ax.set_xlim(lim), ax.set_ylim(lim)
-            ax.set_title(f"{title} (random forest head)", fontsize=10)
-            ax.grid(alpha=0.3)
-            if row == 1:
-                ax.set_xlabel("Kendall tau of token-count features")
-            if col == 0:
-                ax.set_ylabel("Kendall tau of LLM features")
+    sizes = [s for s in dict.fromkeys(m.rsplit("_", 1)[0] for m in LLMS) if s in SIZE_M]
+    others = [m for m in LLMS if m.rsplit("_", 1)[0] not in SIZE_M]  # 非 Pythia 的模型（如 Qwen）各占一列，放在上排
+    cells = [(row, col, f"{size}_{step}") for col, size in enumerate(sizes)
+             for row, step in enumerate(["step0", "step143000"])]
+    cells += [(0, len(sizes) + i, m) for i, m in enumerate(others)]
+    ncol = len(sizes) + len(others)
+    fig, axes = plt.subplots(2, ncol, figsize=(5.2 * ncol + 1, 10.5), sharex=True, sharey=True, squeeze=False)
+    for i in range(len(others)):
+        axes[1, len(sizes) + i].set_visible(False)
+    for row, col, llm in cells:
+        ax = axes[row, col]
+        title = label(llm)
+        if llm not in LLMS:
+            ax.set_visible(False)
+            continue
+        for space, df in all_df.items():
+            sub = df[df["head"] == "rf"]
+            mean = sub.groupby(["target", "features", "n_train"]).tau.mean()
+            for fmt in FORMATS:
+                for (target, n), x in mean.xs(f"{fmt}_bow", level="features").items():
+                    y = mean.get((target, f"{fmt}_{llm}", n))
+                    if y is None:
+                        continue
+                    ax.scatter(x, y, color=FMT_COLOR[fmt], marker=SPACE_MARKER[space],
+                               s=18 + 12 * np.log10(n) ** 2, alpha=0.8, edgecolor="white", linewidth=0.5)
+        lim = [0, 0.85]
+        ax.plot(lim, lim, color="gray", linestyle="--", linewidth=1)
+        ax.set_xlim(lim), ax.set_ylim(lim)
+        ax.set_title(f"{title} (random forest head)", fontsize=10)
+        ax.grid(alpha=0.3)
+        if row == 1:
+            ax.set_xlabel("Kendall tau of token-count features")
+        if col == 0:
+            ax.set_ylabel("Kendall tau of LLM features")
     axes = axes.ravel()
     handles = [plt.Line2D([], [], color=c, marker="o", linestyle="", label=f) for f, c in FMT_COLOR.items()]
     handles += [plt.Line2D([], [], color="gray", marker=m, linestyle="", label=s) for s, m in SPACE_MARKER.items()]
