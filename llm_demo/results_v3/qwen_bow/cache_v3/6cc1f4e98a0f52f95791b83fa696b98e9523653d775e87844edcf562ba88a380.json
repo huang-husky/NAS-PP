@@ -1,0 +1,14 @@
+{
+  "space": "transnas",
+  "features": "sorted_qwenbow",
+  "target": "segmentsemantic",
+  "head": "rf",
+  "n_train": 50,
+  "X": "03e7c26ef2a6bac8253de778a34ef3e3c397e21c8e7e55fe722a3161ce537ebe",
+  "y": "409ba87970ffd1683a5a76e79dd5fa3047e0f29baf505027aabb2531ae8cfd31",
+  "source": "4328123ae2617e22669573b8b1c221dccc9b2f98dda6356b65a1df734a080c41",
+  "metric": "min-rank-stable-ties-v2",
+  "numpy": "2.4.4",
+  "scipy": "1.17.1",
+  "sklearn": "1.8.0"
+}

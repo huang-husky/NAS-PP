@@ -31,7 +31,7 @@ from joblib import Parallel, delayed
 
 from arch_text import load_dataset
 from embed import FEATURE_DIR, load_archs
-from explain import count_ceiling, run_one
+from explain import group_mean_reference, run_one
 from formats import FORMATS
 from nb101_text import encode_nb101, load_nb101
 from progress import Progress
@@ -56,6 +56,21 @@ def set_models(names):
     FEATS = ["onehot"] + [f"{fmt}_{k}" for fmt in FORMATS for k in ["bow", *LLMS]]
 
 
+def isolated_config(function):
+    """Restore experiment configuration after a driver temporarily overrides it."""
+    from functools import wraps
+    import copy
+    @wraps(function)
+    def wrapper(*args, **kwargs):
+        names = ["FMT_DIR", "FEATS", "HEADS", "TARGETS", "LLMS"]
+        saved = {k: copy.deepcopy(globals()[k]) for k in names}
+        try:
+            return function(*args, **kwargs)
+        finally:
+            globals().update(saved)
+    return wrapper
+
+
 def label(llm):
     """pythia70m_step0 -> 'Pythia-70M, random'"""
     if llm == "qwen25_0.5b":
@@ -72,8 +87,11 @@ SPACE_MARKER = {"nb201": "o", "transnas": "s", "nb101": "^"}
 
 def load_space(space):
     """返回 (结构池里的结构, {目标: 标签}, one-hot, 操作计数)。"""
+    from artifacts import verify_snapshot, pool_checked
+    verify_snapshot(FMT_DIR / space)
     pool = np.load(FMT_DIR / space / "pool.npy")
     archs = load_archs(space)
+    pool_checked(pool, len(archs))
     archs = [archs[i] for i in pool]
     if space == "nb201":
         ys = {"cifar10_acc": load_dataset("cifar10_acc")[1][pool]}
@@ -95,38 +113,13 @@ def needed_files():
 
 
 def curves(space, ys, oh, sizes, n_seeds, n_jobs, out_dir):
-    partial = out_dir / f"curves_{space}_partial.csv"
-    prev = pd.read_csv(partial) if partial.exists() else pd.DataFrame(
-        columns=["target", "n_train", "seed", "features", "head", "tau", "n_at_10"])
-    prev = prev[prev.seed < n_seeds]
-    have = prev.groupby(["target", "features", "head", "n_train"]).seed.nunique()
-    feats = [f for f in FEATS if f == "onehot" or (FMT_DIR / space / f"{f}.npy").exists()]  # 冒烟测试时有些还没提完
-    jobs = [(f, t, h, n) for f in feats for t in ys for h in HEADS for n in sizes
-            if have.get((t, f, h, n), 0) < seeds_for(n, n_seeds)]
-    print(f"\n[{space}] 一共 {len(FEATS) * len(ys) * len(HEADS) * len(sizes)} 组，这次要算 {len(jobs)} 组", flush=True)
-
+    from experiment import run_curves
+    missing = [f for f in FEATS if f != "onehot" and not (FMT_DIR / space / f"{f}.npy").exists()]
+    if missing:
+        raise FileNotFoundError(f"Missing requested features in {space}: {missing}")
     def load(f):
         return oh if f == "onehot" else np.load(FMT_DIR / space / f"{f}.npy")
-
-    dims = {f: (oh.shape[1] if f == "onehot" else np.load(FMT_DIR / space / f"{f}.npy", mmap_mode="r").shape[1])
-            for f in dict.fromkeys(j[0] for j in jobs)}
-    rows = []
-    if jobs:
-        bar = Progress(sum(est_cost(h, n, dims[f]) * seeds_for(n, n_seeds) for f, _, h, n in jobs),
-                       name=space, every=120, units=False)
-        with Parallel(n_jobs=n_jobs) as pool:
-            for feat in dims:
-                X = load(feat)
-                for f, target, head, n in [j for j in jobs if j[0] == feat]:
-                    k = seeds_for(n, n_seeds)
-                    out = pool(delayed(run_one)(X, ys[target], n, s, head) for s in range(k))
-                    rows += [dict(target=target, n_train=n, seed=s, features=feat, head=head, tau=t, n_at_10=n10)
-                             for s, (t, n10) in enumerate(out)]
-                    pd.concat([prev, pd.DataFrame(rows)]).to_csv(partial, index=False)
-                    bar.update(est_cost(head, n, X.shape[1]) * k, note=f"{feat} {target} {head} n={n}")
-    df = pd.concat([prev, pd.DataFrame(rows)], ignore_index=True)
-    df = df.astype({"tau": float, "n_at_10": float, "n_train": int, "seed": int})
-    return df.drop_duplicates(["target", "features", "head", "n_train", "seed"])
+    return run_curves(space, ys, FEATS, load, sizes, n_seeds, n_jobs, out_dir, HEADS, seeds_for)
 
 
 def agreement(all_df):
@@ -211,14 +204,15 @@ def plot_scatter(all_df, out_dir):
         ax.set_title(f"{title} (random forest head)", fontsize=10)
         ax.grid(alpha=0.3)
         if row == 1:
-            ax.set_xlabel("Kendall tau of token-count features")
+            ax.set_xlabel("Kendall tau of Pythia-token counts")
         if col == 0:
             ax.set_ylabel("Kendall tau of LLM features")
     axes = axes.ravel()
-    handles = [plt.Line2D([], [], color=c, marker="o", linestyle="", label=f) for f, c in FMT_COLOR.items()]
-    handles += [plt.Line2D([], [], color="gray", marker=m, linestyle="", label=s) for s, m in SPACE_MARKER.items()]
-    axes[0].legend(handles=handles, fontsize=8, loc="upper left", title="format / space (bigger = more samples)",
-                   title_fontsize=8)
+    colors = [plt.Line2D([], [], color=c, marker="o", linestyle="", label=f) for f, c in FMT_COLOR.items()]
+    shapes = [plt.Line2D([], [], color="black", markerfacecolor="none", marker=m, linestyle="", label=s) for s, m in SPACE_MARKER.items()]
+    color_legend = axes[0].legend(handles=colors, fontsize=7, loc="upper left", title="Color = text format")
+    axes[0].add_artist(color_legend)
+    axes[0].legend(handles=shapes, fontsize=7, loc="lower right", title="Shape = space; size = n")
     fig.suptitle("Does the text format's token counts predict what the LLM features can do?")
     fig.tight_layout()
     fig.savefig(out_dir / "fig_formats_scatter.png", dpi=150)
@@ -249,24 +243,32 @@ def plot_curves(all_df, out_dir):
 
 
 def main():
+    global FMT_DIR
     parser = argparse.ArgumentParser()
     parser.add_argument("--seeds", type=int, default=20)
     parser.add_argument("--jobs", type=int, default=10)
     parser.add_argument("--max-n", type=int, default=max(SIZES))
-    parser.add_argument("--out", default=str(HERE / "results" / "step3"))
+    parser.add_argument("--out", default=str(HERE / "results_v3" / "step3"))
     parser.add_argument("--wait", action="store_true", help="等所有特征文件都出现后再开始")
     parser.add_argument("--models", default="pythia410m_step0,pythia410m_step143000",
                         help="要评估的 LLM，逗号隔开；all = 4 种大小 × 2 个版本")
+    parser.add_argument("--wait-timeout", type=float, default=21600)
+    parser.add_argument("--feat-dir", default=None)
     args = parser.parse_args()
+    if args.feat_dir:
+        FMT_DIR = Path(args.feat_dir)
     set_models(ALL_LLMS if args.models == "all" else args.models.split(","))
     sizes = [n for n in SIZES if n <= args.max_n]
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     if args.wait:
+        deadline = time.monotonic() + args.wait_timeout
         while missing := [f for f in needed_files() if not f.exists()]:
             print(f"{time.strftime('%H:%M')} 还差 {len(missing)} 个特征文件，1 分钟后再看", flush=True)
-            time.sleep(60)
+            if time.monotonic() >= deadline:
+                raise TimeoutError("Feature wait timed out")
+            time.sleep(min(60, max(0, deadline - time.monotonic())))
         time.sleep(30)  # 最后一个文件刚写出来，留点时间写完
 
     lines = []
@@ -279,13 +281,13 @@ def main():
     all_df = {}
     for space in TARGETS:
         ys, oh, cnt = load_space(space)
-        say("", f"===== [{space}] 天花板（{len(oh)} 个结构；同一组只能给同一个预测，用真实精度的组平均，上帝视角）=====")
+        say("", f"===== [{space}] 组均值参考（{len(oh)} 个结构；同一组只能给同一个预测，用真实精度的组平均，上帝视角）=====")
         for target, y in ys.items():
-            c, g = count_ceiling(cnt, y)
-            say(f"  {target:16s} 操作计数：τ 上限 {c:.3f}（{g} 组）")
+            c, g = group_mean_reference(cnt, y)
+            say(f"  {target:16s} 操作计数：τ 参考 {c:.3f}（{g} 组）")
             for fmt in FORMATS:
-                c, g = count_ceiling(np.load(FMT_DIR / space / f"{fmt}_bow.npy"), y)
-                say(f"  {target:16s} {fmt:8s} 词频：τ 上限 {c:.3f}（{g} 组）")
+                c, g = group_mean_reference(np.load(FMT_DIR / space / f"{fmt}_bow.npy"), y)
+                say(f"  {target:16s} {fmt:8s} 词频：τ 参考 {c:.3f}（{g} 组）")
 
         df = curves(space, ys, oh, sizes, args.seeds, args.jobs, out_dir)
         df.to_csv(out_dir / f"curves_{space}.csv", index=False)
@@ -312,6 +314,10 @@ def main():
                     out.append(f"  posword_{llm} − onehot : " + paired_common(df, target, head, f"posword_{llm}", "onehot"))
                 say("", *out)
 
+    from statistics_report import agreement_tables
+    points, stratified = agreement_tables(all_df)
+    points.to_csv(out_dir / "agreement_points.csv", index=False)
+    stratified.to_csv(out_dir / "agreement_stratified.csv", index=False)
     agree = agreement(all_df)
     say("", "===== 规律 3：每个模型的 LLM τ 和词频 τ 吻合得怎么样（所有写法 × 空间 × 任务 × 样本数）=====",
         "  r = 相关系数；mean_abs_gap = 平均差距；mean_gap = 平均偏差（LLM − 词频）；r_no_posword = 去掉 posword 后的相关系数",
@@ -323,5 +329,4 @@ def main():
 
 
 if __name__ == "__main__":
-    warnings.filterwarnings("ignore", category=UserWarning)
     main()

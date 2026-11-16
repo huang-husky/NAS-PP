@@ -28,8 +28,10 @@ def run(*args):
 
 
 if __name__ == "__main__":
-    run("run_formats.py", "--models", "qwen25_0.5b")
-    run("step3_formats.py", "--models", ",".join(PYTHIA + ["qwen25_0.5b"]))
-    run("step6_search.py", "--runs", "50")
+    features = str(HERE / "features_generated_v3" / "formats")
+    run("run_formats.py", "--models", ",".join(PYTHIA + ["qwen25_0.5b"]), "--out", features)
+    run("step3_formats.py", "--models", ",".join(PYTHIA + ["qwen25_0.5b"]), "--feat-dir", features)
+    run("step6_search.py", "--runs", "50", "--feat-dir", features,
+        "--n10-dir", str(HERE / "results_v3" / "step3"))
     with open(LOG, "a", encoding="utf-8") as f:
         f.write(f"\n========== {time.strftime('%H:%M')}  补充实验全部完成 EXIT ==========\n")

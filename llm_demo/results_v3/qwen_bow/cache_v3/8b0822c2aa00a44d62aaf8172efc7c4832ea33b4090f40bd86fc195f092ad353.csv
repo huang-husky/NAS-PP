@@ -1,0 +1,11 @@
+target,features,head,n_train,seed,cache_key,tau,tau_raw,tau_status,n_at_10,warnings,metric_version,prediction_ties
+autoencoder,sorted_qwenbow,rf,1000,0,8b0822c2aa00a44d62aaf8172efc7c4832ea33b4090f40bd86fc195f092ad353,0.41068793232362877,0.41068793232362877,ok,57,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,sorted_qwenbow,rf,1000,1,8b0822c2aa00a44d62aaf8172efc7c4832ea33b4090f40bd86fc195f092ad353,0.40727583859321953,0.40727583859321953,ok,53,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,sorted_qwenbow,rf,1000,2,8b0822c2aa00a44d62aaf8172efc7c4832ea33b4090f40bd86fc195f092ad353,0.4031272034178316,0.4031272034178316,ok,57,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,sorted_qwenbow,rf,1000,3,8b0822c2aa00a44d62aaf8172efc7c4832ea33b4090f40bd86fc195f092ad353,0.3956581636327215,0.3956581636327215,ok,77,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,sorted_qwenbow,rf,1000,4,8b0822c2aa00a44d62aaf8172efc7c4832ea33b4090f40bd86fc195f092ad353,0.39495817446660536,0.39495817446660536,ok,63,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,sorted_qwenbow,rf,1000,5,8b0822c2aa00a44d62aaf8172efc7c4832ea33b4090f40bd86fc195f092ad353,0.39441795499179466,0.39441795499179466,ok,66,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,sorted_qwenbow,rf,1000,6,8b0822c2aa00a44d62aaf8172efc7c4832ea33b4090f40bd86fc195f092ad353,0.41372561411161135,0.41372561411161135,ok,32,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,sorted_qwenbow,rf,1000,7,8b0822c2aa00a44d62aaf8172efc7c4832ea33b4090f40bd86fc195f092ad353,0.39612023302420074,0.39612023302420074,ok,278,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,sorted_qwenbow,rf,1000,8,8b0822c2aa00a44d62aaf8172efc7c4832ea33b4090f40bd86fc195f092ad353,0.39085575777908055,0.39085575777908055,ok,99,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,sorted_qwenbow,rf,1000,9,8b0822c2aa00a44d62aaf8172efc7c4832ea33b4090f40bd86fc195f092ad353,0.40185347764413204,0.40185347764413204,ok,133,[],min-rank-stable-ties-v2,stable_input_order

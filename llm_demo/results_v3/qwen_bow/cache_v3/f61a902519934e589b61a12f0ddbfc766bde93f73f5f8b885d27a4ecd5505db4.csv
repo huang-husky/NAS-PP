@@ -1,0 +1,11 @@
+target,features,head,n_train,seed,cache_key,tau,tau_raw,tau_status,n_at_10,warnings,metric_version,prediction_ties
+cifar10_acc,nl_qwenbow,ridge,1000,0,f61a902519934e589b61a12f0ddbfc766bde93f73f5f8b885d27a4ecd5505db4,0.46023737154983285,0.46023737154983285,ok,14,[],min-rank-stable-ties-v2,stable_input_order
+cifar10_acc,nl_qwenbow,ridge,1000,1,f61a902519934e589b61a12f0ddbfc766bde93f73f5f8b885d27a4ecd5505db4,0.5261659991617452,0.5261659991617452,ok,13,[],min-rank-stable-ties-v2,stable_input_order
+cifar10_acc,nl_qwenbow,ridge,1000,2,f61a902519934e589b61a12f0ddbfc766bde93f73f5f8b885d27a4ecd5505db4,0.4859044859108803,0.4859044859108803,ok,13,[],min-rank-stable-ties-v2,stable_input_order
+cifar10_acc,nl_qwenbow,ridge,1000,3,f61a902519934e589b61a12f0ddbfc766bde93f73f5f8b885d27a4ecd5505db4,0.5323807918615705,0.5323807918615705,ok,12,[],min-rank-stable-ties-v2,stable_input_order
+cifar10_acc,nl_qwenbow,ridge,1000,4,f61a902519934e589b61a12f0ddbfc766bde93f73f5f8b885d27a4ecd5505db4,0.4720645816091959,0.4720645816091959,ok,2,[],min-rank-stable-ties-v2,stable_input_order
+cifar10_acc,nl_qwenbow,ridge,1000,5,f61a902519934e589b61a12f0ddbfc766bde93f73f5f8b885d27a4ecd5505db4,0.4712634251883359,0.4712634251883359,ok,2,[],min-rank-stable-ties-v2,stable_input_order
+cifar10_acc,nl_qwenbow,ridge,1000,6,f61a902519934e589b61a12f0ddbfc766bde93f73f5f8b885d27a4ecd5505db4,0.4983070594648608,0.4983070594648608,ok,13,[],min-rank-stable-ties-v2,stable_input_order
+cifar10_acc,nl_qwenbow,ridge,1000,7,f61a902519934e589b61a12f0ddbfc766bde93f73f5f8b885d27a4ecd5505db4,0.5316291090843126,0.5316291090843126,ok,8,[],min-rank-stable-ties-v2,stable_input_order
+cifar10_acc,nl_qwenbow,ridge,1000,8,f61a902519934e589b61a12f0ddbfc766bde93f73f5f8b885d27a4ecd5505db4,0.5089593543441986,0.5089593543441986,ok,12,[],min-rank-stable-ties-v2,stable_input_order
+cifar10_acc,nl_qwenbow,ridge,1000,9,f61a902519934e589b61a12f0ddbfc766bde93f73f5f8b885d27a4ecd5505db4,0.4718215509859667,0.4718215509859667,ok,2,[],min-rank-stable-ties-v2,stable_input_order

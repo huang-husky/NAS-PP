@@ -26,8 +26,11 @@ micro（单元级）搜索空间:
     python tools/build_transnas.py <存放 micro.mindrecord 和 micro.mindrecord.db 的文件夹>
 """
 
-import csv
+import argparse
 import json
+import hashlib
+import math
+import csv
 import sqlite3
 import struct
 import sys
@@ -65,28 +68,47 @@ def main(src_dir):
     header += [f"{t}_valid" for t in tasks] + [f"{t}_test" for t in tasks]
     header += ["encoder_params", "encoder_FLOPs"]
 
-    OUT_FILE.parent.mkdir(exist_ok=True)
+    OUT_FILE.parent.mkdir(parents=True, exist_ok=True)
+    if OUT_FILE.exists():
+        raise FileExistsError(f"Preserve existing data: choose a new --out file, not {OUT_FILE}")
+    temporary = OUT_FILE.with_suffix(OUT_FILE.suffix + ".tmp")
     n_rows, unfinished = 0, 0
-    with open(OUT_FILE, "w", newline="", encoding="utf-8") as f:
+    seen = set()
+    with open(temporary, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(header)
         for arch_str, data in read_records(src_dir):
             codes = arch_str.split("-")[-1].replace("_", "")  # "0_00_123" -> "000123"
-            assert len(codes) == 6, arch_str
+            if len(codes) != 6 or arch_str in seen:
+                raise ValueError(f"Invalid or duplicate architecture: {arch_str}")
+            seen.add(arch_str)
             valid, test = [], []
             for t in tasks:
                 m = data[t]["metrics"]
-                unfinished += not data[t]["finish_train"]
+                if not data[t]["finish_train"]:
+                    raise ValueError(f"Unfinished training: {arch_str}/{t}")
                 valid.append(m[f"valid_{MAIN_METRIC[t]}"][-1])
                 test.append(m[f"test_{MAIN_METRIC[t]}"][-1])
             info = data["class_scene"]["model_info"]  # 编码器（也就是 cell 堆起来的主干）在各任务都一样
+            if not all(math.isfinite(v) for v in valid + test):
+                raise ValueError(f"Nonfinite labels: {arch_str}")
             writer.writerow([arch_str] + [OPS[int(c)] for c in codes] + valid + test
                             + [info["encoder_params"], info["encoder_FLOPs"]])
             n_rows += 1
 
+    if n_rows != 4096:
+        raise ValueError(f"Unexpected TransNAS row count: {n_rows}")
+    temporary.replace(OUT_FILE)
     print(f"共 {n_rows} 个结构（应为 4096），没训练完的 任务×结构 数: {unfinished}")
     print(f"已写入 {OUT_FILE}")
 
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    parser = argparse.ArgumentParser()
+    parser.add_argument("source")
+    parser.add_argument("--out", type=Path, default=OUT_FILE)
+    args = parser.parse_args()
+    OUT_FILE = args.out
+    main(args.source)
+    metadata = {"source": str(Path(args.source).resolve()), "builder_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(), "output_sha256": hashlib.sha256(OUT_FILE.read_bytes()).hexdigest(), "row_alignment": "use architecture IDs, never reuse old ordinal pools after regeneration"}
+    OUT_FILE.with_suffix(".metadata.json").write_text(json.dumps(metadata, indent=2), encoding="utf8")

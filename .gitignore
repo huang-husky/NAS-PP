@@ -22,3 +22,5 @@ __pycache__/
 *.pptx
 *.xls
 *.xlsx
+
+finetune_lab/models/*.pt

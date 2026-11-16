@@ -1,0 +1,11 @@
+target,features,head,n_train,seed,cache_key,tau,tau_raw,tau_status,n_at_10,warnings,metric_version,prediction_ties
+autoencoder,code_qwenbow,rf,1000,0,94c11f64d37de554789d917df0cc70743bcdd8441104d3fdbeb67c23c9683d70,0.41067441597450544,0.41067441597450544,ok,57,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,code_qwenbow,rf,1000,1,94c11f64d37de554789d917df0cc70743bcdd8441104d3fdbeb67c23c9683d70,0.40731301024403294,0.40731301024403294,ok,53,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,code_qwenbow,rf,1000,2,94c11f64d37de554789d917df0cc70743bcdd8441104d3fdbeb67c23c9683d70,0.40295107394658425,0.40295107394658425,ok,57,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,code_qwenbow,rf,1000,3,94c11f64d37de554789d917df0cc70743bcdd8441104d3fdbeb67c23c9683d70,0.39575826828916816,0.39575826828916816,ok,77,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,code_qwenbow,rf,1000,4,94c11f64d37de554789d917df0cc70743bcdd8441104d3fdbeb67c23c9683d70,0.3949885896755653,0.3949885896755653,ok,63,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,code_qwenbow,rf,1000,5,94c11f64d37de554789d917df0cc70743bcdd8441104d3fdbeb67c23c9683d70,0.39434697262545,0.39434697262545,ok,66,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,code_qwenbow,rf,1000,6,94c11f64d37de554789d917df0cc70743bcdd8441104d3fdbeb67c23c9683d70,0.4137108312956601,0.4137108312956601,ok,32,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,code_qwenbow,rf,1000,7,94c11f64d37de554789d917df0cc70743bcdd8441104d3fdbeb67c23c9683d70,0.39612023302420074,0.39612023302420074,ok,278,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,code_qwenbow,rf,1000,8,94c11f64d37de554789d917df0cc70743bcdd8441104d3fdbeb67c23c9683d70,0.3908756099654053,0.3908756099654053,ok,99,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,code_qwenbow,rf,1000,9,94c11f64d37de554789d917df0cc70743bcdd8441104d3fdbeb67c23c9683d70,0.4018391145847405,0.4018391145847405,ok,133,[],min-rank-stable-ties-v2,stable_input_order

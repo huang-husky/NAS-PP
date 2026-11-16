@@ -1,6 +1,6 @@
 """COLE 写法检验，按顺序自动跑完，输出追加到 run_cole.log:
     1. 用 COLE 的写法提取随机 / 训练完成 Pythia-410M 的特征（NB201 5000 个，TransNAS 4096 个）
-    2. step7_cole.py：词频上限 + 学习曲线（岭回归、随机森林、MLP）
+    2. step7_cole.py：词频组均值参考 + 学习曲线（岭回归、随机森林、MLP）
 
 运行方式（在 llm_demo 文件夹下）:
     python run_cole.py
@@ -26,7 +26,8 @@ def run(*args):
 
 
 if __name__ == "__main__":
-    run("run_formats.py", "--spaces", "nb201,transnas", "--formats", "cole")
-    run("step7_cole.py")
+    features = str(HERE / "features_generated_v3" / "formats")
+    run("run_formats.py", "--spaces", "nb201,transnas", "--formats", "code,cole", "--out", features)
+    run("step7_cole.py", "--feat-dir", features)
     with open(LOG, "a", encoding="utf-8") as f:
         f.write(f"\n========== {time.strftime('%H:%M')}  COLE 检验全部完成 EXIT ==========\n")

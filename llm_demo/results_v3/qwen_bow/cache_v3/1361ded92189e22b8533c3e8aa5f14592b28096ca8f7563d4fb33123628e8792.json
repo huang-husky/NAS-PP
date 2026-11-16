@@ -1,0 +1,14 @@
+{
+  "space": "nb101",
+  "features": "edges_qwenbow",
+  "target": "test_acc",
+  "head": "ridge",
+  "n_train": 500,
+  "X": "733a7dcceb8685c053e2ce68d7cd242112d0fe1567b62517999a0f8505a8f8a5",
+  "y": "3ca9154e1d652c88180d79f43d05eb28a24b6ac41c9b60cd82d1693169ecb25b",
+  "source": "4328123ae2617e22669573b8b1c221dccc9b2f98dda6356b65a1df734a080c41",
+  "metric": "min-rank-stable-ties-v2",
+  "numpy": "2.4.4",
+  "scipy": "1.17.1",
+  "sklearn": "1.8.0"
+}

@@ -32,6 +32,7 @@ from arch_text import arch_to_code, load_dataset
 from nb101_text import load_nb101, nb101_to_code
 from models import MODEL_DIR, MODELS, has_weights
 from progress import Progress
+from artifacts import feature_context, feature_cached, save_feature, atomic_npy, pool_checked
 
 hf_logging.set_verbosity_error()  # 关掉加载模型时的长篇提示（比如"embed_out.weight 未使用"，不影响结果）
 torch.set_flush_denormal(True)  # 把极小的数直接当 0 算，避免 CPU 在这类数上变慢
@@ -114,12 +115,12 @@ def get_pool(feature_dir, n_total, pool_size):
         if len(pool) != pool_size:
             raise SystemExit(f"已有的结构池是 {len(pool)} 个，和 --pool {pool_size} 不一致。"
                              f"要换大小请先把 {feature_dir} 文件夹改名备份。")
-        return pool
+        return pool_checked(pool, n_total)
     if pool_size >= n_total:
         pool = np.arange(n_total)
     else:
         pool = np.sort(np.random.default_rng(POOL_SEED).choice(n_total, size=pool_size, replace=False))
-    np.save(pool_file, pool)
+    atomic_npy(pool_file, pool)
     return pool
 
 
@@ -143,6 +144,8 @@ def main():
     parser.add_argument("--out-dir", type=str, default=None, help="特征存到这里（冒烟测试时别覆盖正式结果）")
     args = parser.parse_args()
 
+    if args.limit is not None and (args.limit < 1 or args.out_dir is None or Path(args.out_dir).resolve() in {FEATURE_DIR.resolve(), (FEATURE_DIR / args.space).resolve()}):
+        raise ValueError("--limit requires positive size and separate --out-dir")
     archs = load_archs(args.space)
     names = args.only.split(",") if args.only else list(MODELS)
     feature_dir = Path(args.out_dir) if args.out_dir else FEATURE_DIR / ("" if args.space == "nb201" else args.space)
@@ -166,9 +169,13 @@ def main():
                   flush=True)
         return
 
-    pool = get_pool(feature_dir, len(archs), args.pool or len(archs))
+    pool_size = args.pool or len(archs)
+    if args.limit:
+        pool_size = min(pool_size, args.limit)
+    pool = get_pool(feature_dir, len(archs), pool_size)
     if args.limit:
         pool = pool[:args.limit]
+        atomic_npy(feature_dir / "pool.npy", pool)
     if nb101:
         texts = [nb101_to_code(archs[i]) for i in pool]
     else:
@@ -180,7 +187,10 @@ def main():
     for name in names:
         mean_file = feature_dir / f"{name}{suffix}.npy"
         line_file = feature_dir / f"{name}{suffix}_lines.npy"
-        if mean_file.exists() and (nb101 or line_file.exists()):
+        context = feature_context(texts, pool, MODEL_DIR / name, "mean-and-lines" if not nb101 else "mean")
+        mean_ready = feature_cached(mean_file, context, len(pool))
+        lines_ready = nb101 or feature_cached(line_file, context, len(pool))
+        if mean_ready and lines_ready:
             print(f"[跳过] {mean_file.name} 已存在")
             continue
         if not (MODEL_DIR / name / ".download_done").exists() or not has_weights(MODEL_DIR / name):
@@ -190,10 +200,10 @@ def main():
         tok, model = load_model(MODEL_DIR / name)
         means, lines = embed_texts(tok, model, texts, args.batch, name=f"{args.space} {name}{suffix}",
                                    per_line=not nb101)
-        if not mean_file.exists():  # 已有的平均特征不覆盖（之前的评估结果用的就是它）
-            np.save(mean_file, means)
+        if not mean_ready:  # 已有的平均特征不覆盖（之前的评估结果用的就是它）
+            save_feature(mean_file, means, context)
         if lines is not None:
-            np.save(line_file, lines)
+            save_feature(line_file, lines, context)
         print(f"[完成] {name}{suffix}  平均特征 {means.shape}，分行特征 {None if lines is None else lines.shape}  "
               f"用时 {(time.time() - t0) / 60:.1f} 分钟", flush=True)
         del model

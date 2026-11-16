@@ -41,6 +41,7 @@ from sklearn.preprocessing import StandardScaler
 
 from arch_text import load_dataset, one_hot
 from models import MODELS
+from metrics import best_ranks, top_indices
 
 HERE = Path(__file__).parent
 FEATURE_DIR = HERE / "features"
@@ -73,18 +74,29 @@ def make_head(head, seed):
 
 def n_at_k(pred, true, k=10):
     """预测排前 k 的结构里，真实名次最好的那个是第几名（1 = 测试集里真正的第一）。"""
-    true_rank = np.argsort(np.argsort(-true)) + 1
-    top_k = np.argsort(-pred)[:k]
+    true_rank = best_ranks(true)
+    top_k = top_indices(pred, min(k, len(pred)))
     return int(true_rank[top_k].min())
 
 
 def main():
+    global FEATURE_DIR
     parser = argparse.ArgumentParser()
     parser.add_argument("--seeds", type=int, default=20)
+    parser.add_argument("--out", default=str(HERE / "results_v3" / "base"))
+    parser.add_argument("--feature-dir", default=None)
     args = parser.parse_args()
+    if args.feature_dir:
+        FEATURE_DIR = Path(args.feature_dir)
+    global RESULT_DIR
+    RESULT_DIR = Path(args.out)
+    RESULT_DIR.mkdir(parents=True, exist_ok=True)
 
+    from artifacts import verify_snapshot, pool_checked
+    verify_snapshot(FEATURE_DIR)
     pool = np.load(FEATURE_DIR / "pool.npy")
     archs, _ = load_dataset()
+    pool_checked(pool, len(archs))
 
     # 特征来源：one-hot + 已经算好的 LLM 特征（按 models.py 里的顺序，没算好的就跳过）
     features = {"onehot": np.array([one_hot(archs[i]) for i in pool])}
@@ -98,27 +110,11 @@ def main():
     # 训练集不能把结构池用光，至少给测试集留 200 个结构
     sizes = [n for n in TRAIN_SIZES if n <= len(pool) - 200]
 
-    rows = []
-    for target in TARGETS:
-        _, y_all = load_dataset(target)
-        y = y_all[pool]
-        for n in sizes:
-            for seed in range(args.seeds):
-                perm = np.random.default_rng(seed).permutation(len(pool))
-                tr, te = perm[:n], perm[n:]
-                for feat_name, X in features.items():
-                    for head in HEADS:
-                        with warnings.catch_warnings():
-                            warnings.simplefilter("ignore", ConvergenceWarning)
-                            pred = make_head(head, seed).fit(X[tr], y[tr]).predict(X[te])
-                            warnings.simplefilter("ignore")  # 预测值全部相同时 tau 无定义，记为 0
-                            tau = kendalltau(pred, y[te]).statistic
-                        rows.append(dict(target=target, n_train=n, seed=seed, features=feat_name, head=head,
-                                         tau=0.0 if np.isnan(tau) else tau, n_at_10=n_at_k(pred, y[te])))
-            print(f"[完成] 目标 {target}，n = {n}", flush=True)
-
-    df = pd.DataFrame(rows)
-    df.to_csv(RESULT_DIR / "results.csv", index=False)
+    from experiment import run_curves, atomic_csv
+    ys = {target: load_dataset(target)[1][pool] for target in TARGETS}
+    df = run_curves("nb201", ys, list(features), features.__getitem__, sizes,
+                    args.seeds, 1, RESULT_DIR, HEADS, lambda n, k: k)
+    atomic_csv(df, RESULT_DIR / "results.csv")
 
     # 汇总表：每种组合在每种样本数下 tau 的 平均值 ± 标准差
     keys = ["target", "head", "features", "n_train"]

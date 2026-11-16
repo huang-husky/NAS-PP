@@ -1,0 +1,10 @@
+space,target,n_arch,groups,reference,definition
+nb201,cifar10_acc,15625,210,0.6292694531883615,"in-sample group-mean oracle, not a bound"
+transnas,class_scene,4096,84,0.5628095507723919,"in-sample group-mean oracle, not a bound"
+transnas,class_object,4096,84,0.4953099482734024,"in-sample group-mean oracle, not a bound"
+transnas,jigsaw,4096,84,0.4811543762855133,"in-sample group-mean oracle, not a bound"
+transnas,room_layout,4096,84,0.5099883355806573,"in-sample group-mean oracle, not a bound"
+transnas,segmentsemantic,4096,84,0.5300038580050682,"in-sample group-mean oracle, not a bound"
+transnas,normal,4096,84,0.5581769332405916,"in-sample group-mean oracle, not a bound"
+transnas,autoencoder,4096,84,0.42426085517580503,"in-sample group-mean oracle, not a bound"
+nb101,test_acc,5000,44,0.44518054073972047,"in-sample group-mean oracle, not a bound"

@@ -1,0 +1,3 @@
+target,features,head,n_train,seed,cache_key,tau,tau_raw,tau_status,n_at_10,warnings,metric_version,prediction_ties
+cifar10_acc,code_pythia410m_step0,rf,100,0,26634fb6e36f822b4215035ff6ef276d4bf1371aadb2dbcf356b535444ddc162,0.5643542015595379,0.5643542015595379,ok,50,[],min-rank-stable-ties-v2,stable_input_order
+cifar10_acc,code_pythia410m_step0,rf,100,1,26634fb6e36f822b4215035ff6ef276d4bf1371aadb2dbcf356b535444ddc162,0.5671851522306337,0.5671851522306337,ok,7,[],min-rank-stable-ties-v2,stable_input_order

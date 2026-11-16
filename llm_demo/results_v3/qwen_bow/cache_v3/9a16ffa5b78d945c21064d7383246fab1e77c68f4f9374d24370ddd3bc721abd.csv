@@ -1,0 +1,11 @@
+target,features,head,n_train,seed,cache_key,tau,tau_raw,tau_status,n_at_10,warnings,metric_version,prediction_ties
+test_acc,nl_qwenbow,rf,1000,0,9a16ffa5b78d945c21064d7383246fab1e77c68f4f9374d24370ddd3bc721abd,0.5878481634542769,0.5878481634542769,ok,5,[],min-rank-stable-ties-v2,stable_input_order
+test_acc,nl_qwenbow,rf,1000,1,9a16ffa5b78d945c21064d7383246fab1e77c68f4f9374d24370ddd3bc721abd,0.5688708579886251,0.5688708579886251,ok,11,[],min-rank-stable-ties-v2,stable_input_order
+test_acc,nl_qwenbow,rf,1000,2,9a16ffa5b78d945c21064d7383246fab1e77c68f4f9374d24370ddd3bc721abd,0.5920818737919418,0.5920818737919418,ok,23,[],min-rank-stable-ties-v2,stable_input_order
+test_acc,nl_qwenbow,rf,1000,3,9a16ffa5b78d945c21064d7383246fab1e77c68f4f9374d24370ddd3bc721abd,0.5931288821841263,0.5931288821841263,ok,5,[],min-rank-stable-ties-v2,stable_input_order
+test_acc,nl_qwenbow,rf,1000,4,9a16ffa5b78d945c21064d7383246fab1e77c68f4f9374d24370ddd3bc721abd,0.5886529278615088,0.5886529278615088,ok,43,[],min-rank-stable-ties-v2,stable_input_order
+test_acc,nl_qwenbow,rf,1000,5,9a16ffa5b78d945c21064d7383246fab1e77c68f4f9374d24370ddd3bc721abd,0.5919121657423841,0.5919121657423841,ok,44,[],min-rank-stable-ties-v2,stable_input_order
+test_acc,nl_qwenbow,rf,1000,6,9a16ffa5b78d945c21064d7383246fab1e77c68f4f9374d24370ddd3bc721abd,0.5880139996078912,0.5880139996078912,ok,1,[],min-rank-stable-ties-v2,stable_input_order
+test_acc,nl_qwenbow,rf,1000,7,9a16ffa5b78d945c21064d7383246fab1e77c68f4f9374d24370ddd3bc721abd,0.5767979170709104,0.5767979170709104,ok,5,[],min-rank-stable-ties-v2,stable_input_order
+test_acc,nl_qwenbow,rf,1000,8,9a16ffa5b78d945c21064d7383246fab1e77c68f4f9374d24370ddd3bc721abd,0.5878381431052012,0.5878381431052012,ok,5,[],min-rank-stable-ties-v2,stable_input_order
+test_acc,nl_qwenbow,rf,1000,9,9a16ffa5b78d945c21064d7383246fab1e77c68f4f9374d24370ddd3bc721abd,0.5861002409768059,0.5861002409768059,ok,4,[],min-rank-stable-ties-v2,stable_input_order

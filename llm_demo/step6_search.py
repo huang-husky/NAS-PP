@@ -3,7 +3,7 @@
 A. N@10 分析（用规律 2、3 已经算好的结果，不用重新训练）
    N@10 = 预测最好的 10 个结构里，真实名次最好的那个排第几（1 = 测试集里真正的第一，越小越好）。
    1) N@10 是不是也"跟着词频走"：每种写法下 LLM 特征的 N@10 和词频的 N@10 比
-   2) "只看计数 / 词频"时 N@10 最好能到多少（上帝视角）：同一组的结构分不开，
+   2) "只看计数 / 词频"时 N@10 在组均值策略下的表现（上帝视角）：同一组的结构分不开，
       只能按组的真实平均精度排，组里随机挑；如果最好的结构所在的组很大，挑中它的机会就很小
 
 B. 模拟搜索（更接近 NAS 实际怎么用预测器）
@@ -19,6 +19,8 @@ B. 模拟搜索（更接近 NAS 实际怎么用预测器）
 """
 
 import argparse
+import hashlib
+import json
 import time
 import warnings
 from pathlib import Path
@@ -31,6 +33,7 @@ from scipy.stats import wilcoxon
 
 import step3_formats as S
 from evaluate import make_head
+from metrics import best_ranks, top_indices, METRIC_VERSION
 from progress import Progress
 
 HERE = Path(__file__).parent
@@ -48,9 +51,13 @@ COLOR = {"onehot": "black", "counts+onehot": "tab:purple", "code_bow": "tab:brow
 # ---------------------------------------------------------------- A. N@10
 
 def oracle_n_at_10(groups, y, reps=300, seed=0):
-    """只知道分组时 N@10 的最好情况：按组的真实平均精度从高到低挑满 10 个，最后一组里随机挑。"""
+    """只知道分组时 N@10 组均值策略参考：按组的真实平均精度从高到低挑满 10 个，最后一组里随机挑。"""
+    from experiment import validate_xy
+    validate_xy(np.asarray(groups), np.asarray(y))
+    if reps < 1:
+        raise ValueError("reps must be positive")
     rng = np.random.default_rng(seed)
-    true_rank = np.argsort(np.argsort(-y)) + 1
+    true_rank = best_ranks(y)
     _, g = np.unique(groups, axis=0, return_inverse=True)
     g = g.ravel()
     order = np.argsort(-(np.bincount(g, weights=y) / np.bincount(g)))
@@ -67,11 +74,15 @@ def oracle_n_at_10(groups, y, reps=300, seed=0):
     return float(np.median(out)), float(np.mean(np.array(out) == 1))
 
 
-def n10_analysis(say):
+def n10_analysis(say, curves_dir=HERE / "results_repaired" / "step3"):
+    curves_dir = Path(curves_dir)
+    say(f"N@10 分析读取的 step3 结果：{curves_dir}")
+    if curves_dir.resolve() == (HERE / "results_repaired" / "step3").resolve():
+        say("注意：以下step3的N@10为历史选择结果的并列名次修正版；预测并列沿用历史规则，不是v2重跑。")
     say("", "===== A. N@10（随机森林，中位数；越小越好）=====")
     rows = []
     for space in S.TARGETS:
-        df = pd.read_csv(HERE / "results" / "step3" / f"curves_{space}.csv")
+        df = pd.read_csv(curves_dir / f"curves_{space}.csv")
         df = df[df["head"] == "rf"]
         rows.append(df.assign(space=space))
     df = pd.concat(rows)
@@ -95,7 +106,7 @@ def n10_analysis(say):
     for llm, g in p.groupby("llm"):
         say(f"  log10(N@10)：{llm} 和词频的相关系数 r = {np.corrcoef(g.bow, g.llm_val)[0, 1]:.3f}（{len(g)} 个点）")
 
-    say("", "  只看分组的 N@10 最好情况（上帝视角，整个结构池；括号里是 N@10 = 1 的概率）")
+    say("", "  只看分组的 N@10 组均值策略参考（上帝视角，整个结构池；括号里是 N@10 = 1 的概率）")
     for space in S.TARGETS:
         ys, oh, cnt = S.load_space(space)
         bow = np.load(S.FMT_DIR / space / "code_bow.npy")
@@ -111,31 +122,86 @@ def n10_analysis(say):
 
 def search_once(X, y, run, budget, init=10, step=10):
     """一次搜索，返回每测完一批后"找到的最好结构在池子里排第几"。X=None 表示随机搜索。"""
+    if not 1 <= budget <= len(y) or init < 1 or step < 1:
+        raise ValueError("require 1 <= budget <= pool size, init/step > 0")
+    if X is not None and (len(X) != len(y) or not np.isfinite(X).all()):
+        raise ValueError("feature/label row mismatch")
+    init = min(init, budget)
     rng = np.random.default_rng(1000 + run)
-    true_rank = np.argsort(np.argsort(-y)) + 1
+    true_rank = best_ranks(y)
     tested = list(rng.choice(len(y), size=init, replace=False))
     history = [(len(tested), int(true_rank[tested].min()))]
     while len(tested) < budget:
         rest = np.setdiff1d(np.arange(len(y)), tested)
+        take = min(step, budget - len(tested), len(rest))
         if X is None:
-            new = rng.choice(rest, size=step, replace=False)
+            new = rng.choice(rest, size=take, replace=False)
         else:
             model = make_head("rf", run)
             model.set_params(regressor__randomforestregressor__n_jobs=1)
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                pred = model.fit(X[tested], y[tested]).predict(X[rest])
-            new = rest[np.argsort(-pred)[:step]]
+            pred = model.fit(X[tested], y[tested]).predict(X[rest])
+            new = rest[top_indices(pred, take)]
         tested += list(new)
         history.append((len(tested), int(true_rank[tested].min())))
     return history
 
 
+def atomic_csv(df, path):
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    df.to_csv(temporary, index=False)
+    temporary.replace(path)
+
+
+def complete_search_rows(df, budget):
+    """Discard incomplete runs rather than treating their first row as completion."""
+    expected = list(range(min(10, budget), budget, 10)) + [budget]
+    keys = ["space", "target", "features", "run"]
+    valid = []
+    for _, group in df.groupby(keys):
+        group = group.sort_values("queries")
+        if (group.queries.tolist() == expected and
+                np.isfinite(group.best_rank).all() and (group.best_rank >= 1).all() and
+                (group.best_rank.diff().dropna() <= 0).all()):
+            valid.append(group)
+    return pd.concat(valid, ignore_index=True) if valid else df.iloc[:0].copy()
+
+
+def search_cache_dir(root, budget):
+    """Separate incompatible budgets, metrics, code and inputs; preserve legacy files."""
+    from experiment import code_digest
+    code = code_digest([("step6_search", "search_once"), ("evaluate", "make_head"), ("metrics", "best_ranks"),
+                        ("metrics", "top_indices"), ("step3_formats", "load_space"), ("step2", "encode"),
+                        ("nb101_text", "encode_nb101"), ("nb101_text", "load_nb101"), ("nb201", "load_dataset")])
+    sources = sorted((HERE.parent / "predictor_lab" / "data").glob("*.csv"))
+    for space in S.TARGETS:
+        sources.append(S.FMT_DIR / space / "pool.npy")
+        sources += [S.FMT_DIR / space / f"{f}.npy" for f in SEARCH_FEATS
+                    if f not in {"onehot", "counts+onehot", "random"}]
+    import sklearn
+    manifest = {"metric": METRIC_VERSION, "budget": budget, "init": 10, "step": 10,
+                "numpy": np.__version__, "sklearn": sklearn.__version__, "code": code, "files": {}}
+    for path in sources:
+        digest = hashlib.sha256()
+        with path.open("rb") as stream:
+            for block in iter(lambda: stream.read(1024 * 1024), b""):
+                digest.update(block)
+        manifest["files"][str(path.resolve())] = digest.hexdigest()
+    key = hashlib.sha256(json.dumps(manifest, sort_keys=True).encode()).hexdigest()[:16]
+    folder = root / ("search_v2_" + key)
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf8")
+    return folder
+
+
 def run_search(args, say, out_dir):
     say("", "===== B. 模拟搜索（随机森林预测器，每次测 10 个；数字 = 找到的最好结构在整个池子里的名次，中位数）=====")
+    out_dir = search_cache_dir(out_dir, args.budget)
+    say(f"Search results directory: {out_dir}")
     part_file = out_dir / "search_partial.csv"
     prev = pd.read_csv(part_file) if part_file.exists() else pd.DataFrame(
         columns=["space", "target", "features", "run", "queries", "best_rank"])
+    prev = complete_search_rows(prev, args.budget)
+    prev = prev[prev.run < args.runs]
     done = set(map(tuple, prev[["space", "target", "features", "run"]].drop_duplicates().values))
     jobs = [(s, t, f) for s in S.TARGETS for t in S.TARGETS[s] for f in SEARCH_FEATS
             if any((s, t, f, r) not in done for r in range(args.runs))]
@@ -155,10 +221,10 @@ def run_search(args, say, out_dir):
                     for r, hist in zip(todo, out):
                         rows += [dict(space=space, target=target, features=f, run=r, queries=q, best_rank=b)
                                  for q, b in hist]
-                    pd.concat([prev, pd.DataFrame(rows)]).to_csv(part_file, index=False)
+                    atomic_csv(pd.concat([prev, pd.DataFrame(rows)]), part_file)
                     bar.update(1, note=f"{space} {target} {f}")
     df = pd.concat([prev, pd.DataFrame(rows)], ignore_index=True).astype({"queries": int, "best_rank": int, "run": int})
-    df.to_csv(out_dir / "search.csv", index=False)
+    atomic_csv(df, out_dir / "search.csv")
 
     marks = sorted({q for q in [50, 100, 200] if q <= args.budget} | {args.budget})
     for (space, target), sub in df.groupby(["space", "target"]):
@@ -171,9 +237,10 @@ def run_search(args, say, out_dir):
         out = []
         for f in SEARCH_FEATS:
             if f != "onehot" and f in last and "onehot" in last:
-                d = (last["onehot"] - last[f]).values  # 正数 = f 找到的更好（名次更小）
+                d = (last["onehot"] - last[f]).dropna().values  # 正数 = f 找到的更好（名次更小）
                 p = wilcoxon(d).pvalue if np.any(d != 0) else 1.0
-                out.append(f"  {f} 比 one-hot 更好的次数 {(d > 0).sum()}/{len(d)}，更差 {(d < 0).sum()}，p={p:.2g}")
+                family = max(1, sum(len(v) for v in S.TARGETS.values()) * (len(SEARCH_FEATS)-1))
+                out.append(f"  {f} 比 one-hot 更好的次数 {(d > 0).sum()}/{len(d)}，更差 {(d < 0).sum()}，p_raw={p:.2g}, p_bonferroni={min(1, p*family):.2g}")
         say(*out)
     return df
 
@@ -200,13 +267,19 @@ def plot_search(df, out_dir):
     fig.savefig(out_dir / "fig_search.png", dpi=130)
 
 
+@S.isolated_config
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--runs", type=int, default=20)
     parser.add_argument("--budget", type=int, default=200)
     parser.add_argument("--jobs", type=int, default=10)
-    parser.add_argument("--out", default=str(HERE / "results" / "step6"))
+    parser.add_argument("--out", default=str(HERE / "results_v3" / "step6"))
+    parser.add_argument("--feat-dir", default=None)
+    parser.add_argument("--n10-dir", default=str(HERE / "results_repaired" / "step3"),
+                        help="N@10 分析读取哪一份 step3 学习曲线（用新特征时指向新的 step3 输出）")
     args = parser.parse_args()
+    if args.feat_dir:
+        S.FMT_DIR = Path(args.feat_dir)
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
     lines = []
@@ -216,12 +289,12 @@ def main():
         print("\n".join(new), flush=True)
         (out_dir / "summary.txt").write_text("\n".join(lines), encoding="utf-8")
 
-    n10_analysis(say)
+    n10_analysis(say, args.n10_dir)
     df = run_search(args, say, out_dir)
-    plot_search(df, out_dir)
+    # Keep revised figures separate from legacy plots as well.
+    plot_search(df, search_cache_dir(out_dir, args.budget))
     print(f"\n结果已保存到 {out_dir}")
 
 
 if __name__ == "__main__":
-    warnings.filterwarnings("ignore", category=UserWarning)
     main()

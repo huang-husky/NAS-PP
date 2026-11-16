@@ -1,0 +1,35 @@
+{
+  "method": "ordinal rank -> sorted-label minimum rank; historical selection preserved",
+  "sources": {
+    "D:\\CS\\Performance_Predictor\\llm_demo\\results\\results.csv": "522612bc077bb5a19abaf536a87f931feeead6c4821ffef35735d3678f4f5186",
+    "D:\\CS\\Performance_Predictor\\llm_demo\\results\\step1\\curves.csv": "cd5e3bc31cf275858605c1756924d6e7175174d1bcb731c802d847b149da3a00",
+    "D:\\CS\\Performance_Predictor\\llm_demo\\results\\step2\\curves_nb101.csv": "6d59028763b52101e82178a58ae51bed99a40c6aa3337810be65793cd7501dae",
+    "D:\\CS\\Performance_Predictor\\llm_demo\\results\\step2\\curves_nb201.csv": "6ce4516a4b7e1b621760f338a901dc2df435029ade10f6189b7b2c3f5369c187",
+    "D:\\CS\\Performance_Predictor\\llm_demo\\results\\step2\\curves_transnas.csv": "1e7e5bc73d16105d5bd9dceec3aaa97bfd12783b5e1aa47ef9bbec1411d1d5ae",
+    "D:\\CS\\Performance_Predictor\\llm_demo\\results\\step3\\curves_nb101.csv": "f46780bcc91d430aa1327cb26125fc8abf5d927c700e6f49fa23bc7c1d7b6627",
+    "D:\\CS\\Performance_Predictor\\llm_demo\\results\\step3\\curves_nb201.csv": "44e37c592562289283e650b3cde960e34253a930ee3de9b4ccbdc29e104edff8",
+    "D:\\CS\\Performance_Predictor\\llm_demo\\results\\step3\\curves_transnas.csv": "f023a8844359815edfcd12c17754940753373b63dd41120c5bdcb9cbe89fba62",
+    "D:\\CS\\Performance_Predictor\\llm_demo\\results\\step5\\curves_nb101.csv": "9099088b16573a89cece20fcdb1b1b0b8e08568ab468f241cb5bef722adf777d",
+    "D:\\CS\\Performance_Predictor\\llm_demo\\results\\step5\\curves_nb201.csv": "dce036f41eca30edd9e7fb45f58b544b0bcbc24a8a2a2cf6710d64c80adee7e5",
+    "D:\\CS\\Performance_Predictor\\llm_demo\\results\\step5\\curves_transnas.csv": "e5943a9aa51092aa513e32d4109da05e6a21c8a347d1a2a2463b44d35349d070",
+    "D:\\CS\\Performance_Predictor\\llm_demo\\results\\step6\\search.csv": "27a6a214745adf56df83602588974cc20ba699a90c4c3f4a70509d4195d4ec92",
+    "D:\\CS\\Performance_Predictor\\llm_demo\\results\\step7\\curves_nb201.csv": "07c0118fa5cbfe8d318d6ee106ae5e9d34cdf56f382d4dac96523793b85dddb8",
+    "D:\\CS\\Performance_Predictor\\llm_demo\\results\\step7\\curves_transnas.csv": "b7cf1f0b1255e1f8c7f62220410411761d78a743eb465cb0ad908bbfc60e6392"
+  },
+  "label_and_pool_inputs": {
+    "D:\\CS\\Performance_Predictor\\llm_demo\\features\\formats\\nb101\\pool.npy": "1f3561746239eaaa4bc08759b2088b17ad5bddf08d7ba2999a34ed69c634853c",
+    "D:\\CS\\Performance_Predictor\\llm_demo\\features\\formats\\nb201\\pool.npy": "f7a0b4dbe2cfd6b1495c3c2da3f406389cd6b8d7914f493595d2deba35d22527",
+    "D:\\CS\\Performance_Predictor\\llm_demo\\features\\formats\\transnas\\pool.npy": "d6f654147cde165cd29348ff442421bd5f7428648f32a823ae7b0744da17991c",
+    "D:\\CS\\Performance_Predictor\\llm_demo\\features\\layers\\nb101\\pool.npy": "1f3561746239eaaa4bc08759b2088b17ad5bddf08d7ba2999a34ed69c634853c",
+    "D:\\CS\\Performance_Predictor\\llm_demo\\features\\layers\\nb201\\pool.npy": "f7a0b4dbe2cfd6b1495c3c2da3f406389cd6b8d7914f493595d2deba35d22527",
+    "D:\\CS\\Performance_Predictor\\llm_demo\\features\\layers\\transnas\\pool.npy": "d6f654147cde165cd29348ff442421bd5f7428648f32a823ae7b0744da17991c",
+    "D:\\CS\\Performance_Predictor\\llm_demo\\features\\nb101\\pool.npy": "1f3561746239eaaa4bc08759b2088b17ad5bddf08d7ba2999a34ed69c634853c",
+    "D:\\CS\\Performance_Predictor\\llm_demo\\features\\pool.npy": "769f406c042d0507982a7c5e46adbdbf71372ab346971552aeab98b78c4fd45b",
+    "D:\\CS\\Performance_Predictor\\llm_demo\\features\\transnas\\pool.npy": "d6f654147cde165cd29348ff442421bd5f7428648f32a823ae7b0744da17991c",
+    "D:\\CS\\Performance_Predictor\\predictor_lab\\data\\nasbench101.csv": "1e5b566c70353dbe74d35d88ae3e3d30746d95caed4b0a79024123da641d5ca0",
+    "D:\\CS\\Performance_Predictor\\predictor_lab\\data\\nasbench201.csv": "93d72cae349b5714371d46225d03158005f07c9821c3bea3cd3c6c62c9d25c7c",
+    "D:\\CS\\Performance_Predictor\\predictor_lab\\data\\transnas_micro.csv": "0b126111ae713b36b53a97a099bcec2177c3bda7e30fa52ec78d7e1d8eeb7c26"
+  },
+  "migration_code_sha256": "8cb0a45bcc7c1f408333ae0153c6722438ee53a6ca0738bac660032555f6e0cd",
+  "elapsed_seconds": 11.844834100003936
+}

@@ -1,0 +1,7 @@
+{
+  "real_fits": 8,
+  "cache_reuse_verified": true,
+  "max_tau_drift": 5.551115123125783e-17,
+  "search_budget": 15,
+  "seconds": 11.078840400004992
+}

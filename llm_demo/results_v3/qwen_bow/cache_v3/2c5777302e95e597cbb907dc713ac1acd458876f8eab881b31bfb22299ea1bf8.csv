@@ -1,0 +1,11 @@
+target,features,head,n_train,seed,cache_key,tau,tau_raw,tau_status,n_at_10,warnings,metric_version,prediction_ties
+segmentsemantic,nl_qwenbow,rf,1000,0,2c5777302e95e597cbb907dc713ac1acd458876f8eab881b31bfb22299ea1bf8,0.5052846700185468,0.5052846700185468,ok,20,[],min-rank-stable-ties-v2,stable_input_order
+segmentsemantic,nl_qwenbow,rf,1000,1,2c5777302e95e597cbb907dc713ac1acd458876f8eab881b31bfb22299ea1bf8,0.5119545731147798,0.5119545731147798,ok,17,[],min-rank-stable-ties-v2,stable_input_order
+segmentsemantic,nl_qwenbow,rf,1000,2,2c5777302e95e597cbb907dc713ac1acd458876f8eab881b31bfb22299ea1bf8,0.5130274498656084,0.5130274498656084,ok,10,[],min-rank-stable-ties-v2,stable_input_order
+segmentsemantic,nl_qwenbow,rf,1000,3,2c5777302e95e597cbb907dc713ac1acd458876f8eab881b31bfb22299ea1bf8,0.5137894332604304,0.5137894332604304,ok,40,[],min-rank-stable-ties-v2,stable_input_order
+segmentsemantic,nl_qwenbow,rf,1000,4,2c5777302e95e597cbb907dc713ac1acd458876f8eab881b31bfb22299ea1bf8,0.5261636998403585,0.5261636998403585,ok,20,[],min-rank-stable-ties-v2,stable_input_order
+segmentsemantic,nl_qwenbow,rf,1000,5,2c5777302e95e597cbb907dc713ac1acd458876f8eab881b31bfb22299ea1bf8,0.5164390472801167,0.5164390472801167,ok,2,[],min-rank-stable-ties-v2,stable_input_order
+segmentsemantic,nl_qwenbow,rf,1000,6,2c5777302e95e597cbb907dc713ac1acd458876f8eab881b31bfb22299ea1bf8,0.5127029279730656,0.5127029279730656,ok,44,[],min-rank-stable-ties-v2,stable_input_order
+segmentsemantic,nl_qwenbow,rf,1000,7,2c5777302e95e597cbb907dc713ac1acd458876f8eab881b31bfb22299ea1bf8,0.5149877540925559,0.5149877540925559,ok,74,[],min-rank-stable-ties-v2,stable_input_order
+segmentsemantic,nl_qwenbow,rf,1000,8,2c5777302e95e597cbb907dc713ac1acd458876f8eab881b31bfb22299ea1bf8,0.5052284340499242,0.5052284340499242,ok,2,[],min-rank-stable-ties-v2,stable_input_order
+segmentsemantic,nl_qwenbow,rf,1000,9,2c5777302e95e597cbb907dc713ac1acd458876f8eab881b31bfb22299ea1bf8,0.49053928403475205,0.49053928403475205,ok,2,[],min-rank-stable-ties-v2,stable_input_order

@@ -34,15 +34,17 @@ POOLS = ["mean", "last"]
 LAYER_FEATS = [f"{m}_L{l}_{p}" for m in MODELS for p in POOLS for l in LAYERS]
 
 
+@S.isolated_config
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--seeds", type=int, default=10)
     parser.add_argument("--jobs", type=int, default=10)
     parser.add_argument("--max-n", type=int, default=1000)
-    parser.add_argument("--out", default=str(HERE / "results" / "step5"))
+    parser.add_argument("--out", default=str(HERE / "results_v3" / "step5"))
     parser.add_argument("--wait", action="store_true")
     parser.add_argument("--no-probe", action="store_true")
     parser.add_argument("--feat-dir", default=None, help="特征文件夹（冒烟测试用）")
+    parser.add_argument("--wait-timeout", type=float, default=21600)
     args = parser.parse_args()
     global LAYER_DIR
     if args.feat_dir:
@@ -56,10 +58,13 @@ def main():
     S.FEATS = ["onehot", "code_bow"] + LAYER_FEATS
 
     if args.wait:
+        deadline = time.monotonic() + args.wait_timeout
         need = [LAYER_DIR / s / f"{f}.npy" for s in S.TARGETS for f in LAYER_FEATS]
         while missing := [f for f in need if not f.exists()]:
             print(f"{time.strftime('%H:%M')} 还差 {len(missing)} 个特征文件，1 分钟后再看", flush=True)
-            time.sleep(60)
+            if time.monotonic() >= deadline:
+                raise TimeoutError("Feature wait timed out")
+            time.sleep(min(60, max(0, deadline - time.monotonic())))
         time.sleep(30)
 
     lines = []
@@ -139,11 +144,10 @@ def plot(all_df, out_dir):
             if c == 0:
                 ax.set_ylabel("Kendall tau (random forest)")
     axes[0, 0].legend(fontsize=7)
-    fig.suptitle("Pythia-410M, code format: which layer / pooling, and does it beat token counts?")
+    fig.suptitle("Pythia-410M layer/pooling comparison (undefined tau omitted; see quality CSV)")
     fig.tight_layout()
     fig.savefig(out_dir / "fig_layers.png", dpi=130)
 
 
 if __name__ == "__main__":
-    warnings.filterwarnings("ignore", category=UserWarning)
     main()

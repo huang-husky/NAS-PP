@@ -1,0 +1,15 @@
+file,rows,changed,max_rank_correction
+results.csv,5040,1905,1383
+step1\curves.csv,7560,2868,25
+step2\curves_nb101.csv,1890,343,7
+step2\curves_nb201.csv,5040,2731,39
+step2\curves_transnas.csv,15120,3364,26
+step3\curves_nb101.csv,9180,1599,8
+step3\curves_nb201.csv,9180,2092,7
+step3\curves_transnas.csv,27540,5226,17
+step5\curves_nb101.csv,1980,357,6
+step5\curves_nb201.csv,1980,441,7
+step5\curves_transnas.csv,5940,1159,17
+step6\search.csv,40000,4027,13
+step7\curves_nb201.csv,2100,569,9
+step7\curves_transnas.csv,6300,1509,17

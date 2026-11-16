@@ -1,0 +1,14 @@
+{
+  "space": "transnas",
+  "features": "sorted_qwenbow",
+  "target": "class_scene",
+  "head": "ridge",
+  "n_train": 100,
+  "X": "03e7c26ef2a6bac8253de778a34ef3e3c397e21c8e7e55fe722a3161ce537ebe",
+  "y": "5fcb7671975561b2a3de3cadcb8d4a02b85eab8fea4bf1ce1cb0abdb8648c63e",
+  "source": "4328123ae2617e22669573b8b1c221dccc9b2f98dda6356b65a1df734a080c41",
+  "metric": "min-rank-stable-ties-v2",
+  "numpy": "2.4.4",
+  "scipy": "1.17.1",
+  "sklearn": "1.8.0"
+}

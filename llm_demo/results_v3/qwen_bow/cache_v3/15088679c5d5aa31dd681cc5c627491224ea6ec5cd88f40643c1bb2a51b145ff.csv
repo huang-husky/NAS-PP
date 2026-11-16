@@ -1,0 +1,11 @@
+target,features,head,n_train,seed,cache_key,tau,tau_raw,tau_status,n_at_10,warnings,metric_version,prediction_ties
+autoencoder,posword_qwenbow,rf,1000,0,15088679c5d5aa31dd681cc5c627491224ea6ec5cd88f40643c1bb2a51b145ff,0.6722448983490058,0.6722448983490058,ok,33,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,posword_qwenbow,rf,1000,1,15088679c5d5aa31dd681cc5c627491224ea6ec5cd88f40643c1bb2a51b145ff,0.6681464128455838,0.6681464128455838,ok,81,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,posword_qwenbow,rf,1000,2,15088679c5d5aa31dd681cc5c627491224ea6ec5cd88f40643c1bb2a51b145ff,0.6848694178608735,0.6848694178608735,ok,25,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,posword_qwenbow,rf,1000,3,15088679c5d5aa31dd681cc5c627491224ea6ec5cd88f40643c1bb2a51b145ff,0.6717704491729221,0.6717704491729221,ok,53,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,posword_qwenbow,rf,1000,4,15088679c5d5aa31dd681cc5c627491224ea6ec5cd88f40643c1bb2a51b145ff,0.6742856939348909,0.6742856939348909,ok,101,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,posword_qwenbow,rf,1000,5,15088679c5d5aa31dd681cc5c627491224ea6ec5cd88f40643c1bb2a51b145ff,0.6739134202436736,0.6739134202436736,ok,152,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,posword_qwenbow,rf,1000,6,15088679c5d5aa31dd681cc5c627491224ea6ec5cd88f40643c1bb2a51b145ff,0.6745515672719685,0.6745515672719685,ok,39,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,posword_qwenbow,rf,1000,7,15088679c5d5aa31dd681cc5c627491224ea6ec5cd88f40643c1bb2a51b145ff,0.6704270927287984,0.6704270927287984,ok,93,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,posword_qwenbow,rf,1000,8,15088679c5d5aa31dd681cc5c627491224ea6ec5cd88f40643c1bb2a51b145ff,0.6751585962728411,0.6751585962728411,ok,4,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,posword_qwenbow,rf,1000,9,15088679c5d5aa31dd681cc5c627491224ea6ec5cd88f40643c1bb2a51b145ff,0.6687765997612534,0.6687765997612534,ok,16,[],min-rank-stable-ties-v2,stable_input_order

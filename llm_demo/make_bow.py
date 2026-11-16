@@ -13,6 +13,7 @@
     python make_bow.py
 """
 
+import argparse
 from collections import Counter
 
 import numpy as np
@@ -22,6 +23,7 @@ from arch_text import arch_to_code
 from embed import FEATURE_DIR, load_archs
 from models import MODEL_DIR
 from nb101_text import nb101_to_code
+from artifacts import feature_context, feature_cached, save_feature
 
 TOKENIZER = MODEL_DIR / "pythia410m_step0"  # 所有 Pythia 存档用的是同一个分词器
 
@@ -35,14 +37,31 @@ def bow(texts, tokenizer):
 
 
 def main():
+    from pathlib import Path
+    from artifacts import atomic_npy, pool_checked
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--out-root", type=Path, default=FEATURE_DIR)
+    args = parser.parse_args()
     tokenizer = AutoTokenizer.from_pretrained(TOKENIZER)
     for space, folder in [("nb201", FEATURE_DIR), ("transnas", FEATURE_DIR / "transnas"),
                           ("nb101", FEATURE_DIR / "nb101")]:
         archs = load_archs(space)
         pool = np.load(folder / "pool.npy")  # 和 LLM 特征用同一批结构、同一个顺序
+        pool_checked(pool, len(archs))
+        folder = args.out_root / ("" if space == "nb201" else space)
+        folder.mkdir(parents=True, exist_ok=True)
+        pool_file = folder / "pool.npy"
+        if pool_file.exists() and not np.array_equal(np.load(pool_file), pool):
+            raise ValueError("Existing output pool differs")
+        if not pool_file.exists():
+            atomic_npy(pool_file, pool)
         to_code = nb101_to_code if space == "nb101" else arch_to_code
-        X, words = bow([to_code(archs[i]) for i in pool], tokenizer)
-        np.save(folder / "bow.npy", X)
+        texts = [to_code(archs[i]) for i in pool]
+        context = feature_context(texts, pool, TOKENIZER, "bow-pythia")
+        if feature_cached(folder / "bow.npy", context, len(pool)):
+            continue
+        X, words = bow(texts, tokenizer)
+        save_feature(folder / "bow.npy", X, context)
         print(f"[{space}] {X.shape[0]} 个结构，{X.shape[1]} 种会变的 token：{words}")
 
 

@@ -1,0 +1,14 @@
+{
+  "space": "nb201",
+  "features": "onehot",
+  "target": "cifar10_acc",
+  "head": "rf",
+  "n_train": 100,
+  "X": "25e4cde3cac850bf93fbdb80e5924932d494b39cafba2b32a831c64fd5687089",
+  "y": "09898e37bbfb8cde24bc3ebe1f736ca1d182d6c5e409e3007e296e3119135ee4",
+  "source": "65c30e97a63c99040ce28b4dbdee10765120b13325764445c3609da2d3c551f3",
+  "metric": "min-rank-stable-ties-v2",
+  "numpy": "2.4.4",
+  "scipy": "1.17.1",
+  "sklearn": "1.8.0"
+}

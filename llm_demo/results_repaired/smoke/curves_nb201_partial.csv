@@ -1,0 +1,9 @@
+target,features,head,n_train,seed,cache_key,tau,tau_raw,tau_status,n_at_10,warnings,metric_version,prediction_ties
+cifar10_acc,onehot,rf,10,0,02fb9a6a999526688832cc5b69940fd52bdd567082a604cfcd7473b640c006fe,0.2804394095583667,0.2804394095583667,ok,1,[],min-rank-stable-ties-v2,stable_input_order
+cifar10_acc,onehot,rf,10,1,02fb9a6a999526688832cc5b69940fd52bdd567082a604cfcd7473b640c006fe,0.1683870059812387,0.1683870059812387,ok,52,[],min-rank-stable-ties-v2,stable_input_order
+cifar10_acc,onehot,rf,100,0,7e475270469c9442dfe3fab3a4c53583c58cada19d0195524124a954a7967c2b,0.4583750518788901,0.4583750518788901,ok,2,[],min-rank-stable-ties-v2,stable_input_order
+cifar10_acc,onehot,rf,100,1,7e475270469c9442dfe3fab3a4c53583c58cada19d0195524124a954a7967c2b,0.3882659069657014,0.3882659069657014,ok,1,[],min-rank-stable-ties-v2,stable_input_order
+cifar10_acc,code_pythia410m_step0,rf,10,0,aa61aad4a416989b3c2a979fe0e0b31d244e62c3eae56671faecf1bce418ad08,0.4912483678789722,0.4912483678789722,ok,1,[],min-rank-stable-ties-v2,stable_input_order
+cifar10_acc,code_pythia410m_step0,rf,10,1,aa61aad4a416989b3c2a979fe0e0b31d244e62c3eae56671faecf1bce418ad08,0.2554563280840953,0.2554563280840953,ok,694,[],min-rank-stable-ties-v2,stable_input_order
+cifar10_acc,code_pythia410m_step0,rf,100,0,26634fb6e36f822b4215035ff6ef276d4bf1371aadb2dbcf356b535444ddc162,0.5643542015595379,0.5643542015595379,ok,50,[],min-rank-stable-ties-v2,stable_input_order
+cifar10_acc,code_pythia410m_step0,rf,100,1,26634fb6e36f822b4215035ff6ef276d4bf1371aadb2dbcf356b535444ddc162,0.5671851522306337,0.5671851522306337,ok,7,[],min-rank-stable-ties-v2,stable_input_order

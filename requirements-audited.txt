@@ -1,0 +1,12 @@
+# Audited local versions; numexpr is optional and not required.
+numpy==2.4.4
+pandas==3.0.3
+scipy==1.17.1
+scikit-learn==1.8.0
+matplotlib==3.10.9
+joblib==1.5.3
+torch==2.10.0+cpu
+transformers==5.5.0
+huggingface-hub==1.9.0
+safetensors==0.7.0
+pyarrow==19.0.0

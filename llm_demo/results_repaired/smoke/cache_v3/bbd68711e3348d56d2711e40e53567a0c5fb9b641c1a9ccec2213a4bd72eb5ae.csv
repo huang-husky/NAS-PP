@@ -1,0 +1,3 @@
+target,features,head,n_train,seed,cache_key,tau,tau_raw,tau_status,n_at_10,warnings,metric_version,prediction_ties
+cifar10_acc,onehot,rf,100,0,bbd68711e3348d56d2711e40e53567a0c5fb9b641c1a9ccec2213a4bd72eb5ae,0.4583750518788901,0.4583750518788901,ok,2,[],min-rank-stable-ties-v2,stable_input_order
+cifar10_acc,onehot,rf,100,1,bbd68711e3348d56d2711e40e53567a0c5fb9b641c1a9ccec2213a4bd72eb5ae,0.3882659069657014,0.3882659069657014,ok,1,[],min-rank-stable-ties-v2,stable_input_order

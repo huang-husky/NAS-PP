@@ -1,0 +1,219 @@
+PAGE 1
+Frozen LLM Features for NAS Performance Prediction
+Progress Report
+Presenter: Xiangqi Huang
+November 2026
+NOTES: 
+IMAGES: 
+
+PAGE 2
+Motivation: what does an LLM encoding really contribute?
+2
+•  Recent work writes architectures as text or code and uses language models to predict performance (e.g., Akhauri et al., ICML 2026)
+•  Architecture encoding strongly affects performance predictors (White et al., NeurIPS 2020; 2021), but what LLM-based encodings actually encode has not been tested
+•  Existing work compares different LLM backbones (e.g., CodeLlama vs. Llama, model sizes), but rarely includes two controls: (a) the same LLM without pretraining (random init), and (b) token counts of the text, with no LLM at all
+Two questions
+①  Do frozen LLM features encode the full architecture (which op sits on which edge), or only a coarse summary (how many times each op is used)?
+②  How much does pretrained knowledge help? (Same LLM: pretrained vs. random init; plus comparison with non-LLM encodings such as one-hot)
+NOTES: 
+IMAGES: 
+
+PAGE 3
+Setup: how features are built and how predictors are evaluated
+3
+Pipeline: architecture → PyTorch-style code → frozen LLM → mean of last-layer outputs = feature vector
+Evaluation
+1.  Sample n labeled architectures (n = 10–2000) and train a regressor (ridge / random forest / MLP) on their features
+2.  Predict all remaining architectures in the search space
+3.  Kendall τ between predicted and true ranking (1 = perfect); N@10 = true rank of the best architecture among the top-10 predicted
+4.  20 random seeds; same pipeline with non-LLM features (one-hot, op counts, token counts) as controls
+Search spaces
+NAS-Bench-201 (all 15,625); TransNAS-Bench-101 micro (all 4,096, 7 tasks); NAS-Bench-101 (5,000 random)
+LLMs
+Pythia 70M / 160M / 410M / 1B, each at random init and fully trained; Qwen2.5-0.5B; all frozen
+Controls
+one-hot (hand-crafted); op counts (5 numbers); token counts of the code (bag of words)
+Statistics
+Paired Wilcoxon test over seeds (same training splits)
+NOTES: 
+IMAGES: 
+
+PAGE 4
+Main finding: strong with few samples, overtaken with many
+4
+NB201: with 10 training architectures, LLM 0.310 vs one-hot 0.185; with 2000, the LLM stalls at 0.638 while one-hot rises to 0.772. The LLM curve stays on the green ceiling line.
+NOTES: The black line is one-hot; blue and red are random and trained Pythia. With few samples the LLM is clearly better; with many, one-hot overtakes it, and the LLM curve stays on the green dotted line, which is the ceiling reachable when you only know how many times each op is used. All three spaces look the same.
+IMAGES: D:\CS\Performance_Predictor\docs\ppt_review\progress_04_image1.png
+
+PAGE 5
+Explanation: LLM features ≈ token counts of the code
+5
+Where the ceiling comes from: by "how many times each op is used", the 15,625 architectures fall into only 210 groups; even knowing each group's true mean accuracy, τ is at most 0.629
+①  Counts are enough
+Just 5 op counts reproduce the LLM's small-sample advantage, and do even better
+②  Position barely matters
+Randomly moving ops to other edges barely changes LLM features with few samples
+③  Probing
+75% of the variance in random-Pythia features is linearly explained by op counts
+④  Direct comparison
+Token counts of the code give learning curves almost identical to the LLM features
+Pretraining gives no consistent benefit: the randomly initialized model is often the best (exceptions: TransNAS and the MLP head with many samples)
+NOTES: Where the ceiling comes from: counting how often each op is used splits the 15,625 architectures into only 210 groups that cannot be separated, so τ is at most 0.629. All four pieces of evidence say LLM features are basically token counts. A side result: pretraining gives no consistent benefit.
+IMAGES: 
+
+PAGE 6
+Rule 2: the text format, not the model, sets the ceiling
+6
+•  The same architecture in 5 formats: code, edge list, sorted ops, natural language, posword
+•  Correlation between LLM τ and the format's token-count τ: random Pythia 0.93, trained 0.88, Qwen 0.86
+•  The mean gap is only about 0.04
+•  Only posword (one dedicated word per "position + op") has no ceiling
+An LLM cannot create information that is not in the text: to raise the ceiling, change the format, not the model
+NOTES: The same architecture written in 5 formats. Each point is one format, space, task and sample size; the x-axis is the token-count score of that format, the y-axis the LLM score. Points lie on the diagonal: whatever the LLM achieves, token counts achieve too. Only posword, with one word per position and op, has no ceiling.
+IMAGES: D:\CS\Performance_Predictor\docs\ppt_review\progress_06_image2.png
+
+PAGE 7
+Rules 3–4: size, layer and pooling don't remove the ceiling
+7
+Rule 3: Pythia 70M → 1B (14×): the correlation with token counts does not change (random 0.93, trained 0.86–0.88); Qwen2.5-0.5B is also 0.86
+Rule 4: layers 6–24, mean or last token: all 0.61–0.66 (one-hot 0.709); probes can read position (≈99%), but the regression head cannot use it
+NOTES: Left: from Pythia 70M to 1B, the agreement between the LLM and token counts does not change, and Qwen is the same. Right: layers 6 to 24, mean or last token, all stay at 0.61 to 0.66 on NB201, versus 0.709 for one-hot. Probes can read which op sits on each edge, but this is swamped by the counts and the regression head cannot use it.
+IMAGES: D:\CS\Performance_Predictor\docs\ppt_review\progress_07_image4.png, D:\CS\Performance_Predictor\docs\ppt_review\progress_07_image3.png
+
+PAGE 8
+Rule 5: in search, this becomes an advantage
+8
+Setup: evaluate 10 random architectures, then a random-forest predictor picks 10 per round up to 200; 50 runs per feature. The table shows how often the true best architecture is found
+Feature
+NB201
+NB101
+TransNAS scene
+TransNAS segment
+TransNAS 
+autoencoder
+Mean
+Random search
+0%
+4%
+2%
+4%
+6%
+3%
+one-hot
+42%
+44%
+28%
+38%
+6%
+32%
+Counts + one-hot
+58%
+50%
+44%
+58%
+10%
+44%
+Token counts (no LLM)
+80%
+58%
+60%
+80%
+24%
+60%
+Random Pythia-410M
+82%
+66%
+64%
+86%
+40%
+68%
+Trained Pythia-410M
+90%
+16%
+80%
+82%
+30%
+60%
+Qwen2.5-0.5B
+96%
+46%
+76%
+76%
+2%
+59%
+Random Pythia is significantly better than one-hot on all 5 tasks (p = 2×10⁻⁵–0.003); trained models are unstable, e.g. Qwen reaches 96% on NB201 but only 2% on autoencoder
+NOTES: Simulated search: evaluate 10 random architectures, then the random-forest predictor picks 10 per round up to 200, 50 runs per feature. Random Pythia finds the true best 68% of the time on average, one-hot only 32%, and it is significantly better on all five tasks. The reason: search has very few samples, exactly where token-count features are strong. Trained models are unstable.
+IMAGES: 
+
+PAGE 9
+COLE check: its high score does not come from its format
+9
+COLE (GECCO 2026) reads NB201 code with a frozen CodeLlama-7B and reports τ = 0.797, above our ceiling of 0.63 → we reproduced its format from its public code
+NB201, random forest, n = 2000
+Our format
+COLE format
+Ceiling (group means)
+0.63
+0.70～0.72
+Token counts
+0.622
+0.617
+Random Pythia-410M
+0.651
+0.650
+Trained Pythia-410M
+0.650
+0.651
+one-hot (control)
+0.778
+—
+•  COLE's format brings position into the token counts, so the theoretical ceiling rises
+•  But the learned predictors do not improve: position is mixed into the counts of the digits 0–3, and 2000 samples are not enough to learn it
+•  The most likely reason is COLE's regression head (PCA to 128 dims + MLP + ranking loss), to be verified
+0.797 is on par with one-hot + random forest (0.778): it does not go beyond what the architecture itself provides
+NOTES: COLE's reported 0.797 is above our ceiling, so we reproduced its format from its public code. The format does raise the theoretical ceiling to about 0.7, but the learned predictors stay at 0.65, the same as with our format. So 0.797 does not come from the format; most likely it comes from the regression head, which still needs checking.
+IMAGES: 
+
+PAGE 10
+Summary
+10
+Mean-pooled frozen LLM features ≈ token counts of the code
+This explains three phenomena at once:
+Better than one-hot with few samples: token counts split architectures into a few groups, which are easy to learn
+Capped with many samples: architectures in the same group cannot be told apart
+No consistent gain from pretraining: token counts leave no room for pretrained knowledge
+Holds across 3 search spaces · 5 formats · Pythia 70M–1B · Qwen2.5-0.5B; in search it is even an advantage
+NOTES: In one sentence: mean-pooled frozen LLM features are basically token counts of the code. This explains three phenomena at once and holds across three spaces, five formats, and models of different sizes and families.
+IMAGES: 
+
+PAGE 11
+Limitations: so far only "evaluate → find patterns"
+11
+Following the route of Ji et al., Loss Functions for Predictor-Based NAS (ICCV 2025): evaluate under a unified setting → find patterns → propose a method based on them
+No method yet
+We found and explained the problem, but have not yet proposed a new predictor based on it
+Limited scale
+The largest model is only 1B; only 3 tabular benchmarks, no larger space such as DARTS
+No comparison with specialized predictors
+Not yet compared with GNN, CAP, DAP or other dedicated predictors
+NOTES: Following the route of Ji et al.'s Loss Functions for Predictor-Based NAS: unified evaluation, find patterns, then propose a method. We have done the first two steps. Three things are missing: a method, scale, and a comparison with specialized predictors.
+IMAGES: 
+
+PAGE 12
+Next steps
+12
+Task
+Purpose
+Verify rules 2–3 on 7B-scale models
+Check whether the rules still hold for larger models
+Compare with specialized predictors (GNN, CAP or DAP)
+See where LLM features stand
+Redo the COLE check with COLE's regression head
+Tell whether 0.797 comes from the head or the model
+Decide on and implement a new method
+The core contribution of the paper
+Initial ideas (not yet verified)
+•  Idea 1: token-count-like features excel with few samples, one-hot with many → a coarse-to-fine surrogate that adapts to the sample size, for evolutionary NAS
+•  Idea 2: make the LLM actually use its pretrained knowledge, e.g. by fine-tuning
+NOTES: Four next steps: the first three fill in experiments; the fourth is the method, the core of the paper. Both initial ideas are unverified; I would like your advice on the direction and on which of the first three to do first.
+IMAGES: 

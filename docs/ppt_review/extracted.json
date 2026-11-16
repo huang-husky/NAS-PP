@@ -1,0 +1,946 @@
+[
+  {
+    "file": "D:\\CS\\Performance_Predictor\\docs\\附件11-02.pptx",
+    "sha256": "94fe5af6138fdcbefe748c11b47db874a9e2f09e0c760c6b9bdddb85126c0ef4",
+    "slides": [
+      {
+        "page": 1,
+        "text": [
+          "附件：补充结果、图表与关键代码",
+          "冻结大模型特征用于 NAS 性能预测 · 阶段进展汇报",
+          "黄湘淇",
+          "2026 年 11 月"
+        ],
+        "images": [],
+        "notes": []
+      },
+      {
+        "page": 2,
+        "text": [
+          "目录",
+          "附2",
+          "一、设置细节",
+          "附3　结构的几种文本写法",
+          "附4　COLE 的写法",
+          "附5　回归头与评估方式",
+          "二、补充结果",
+          "附6　NB201 主结果表",
+          "附7　三种回归头 × 两个目标",
+          "附8　Pythia 训练过程中的变化",
+          "附9　操作计数 vs LLM 特征",
+          "附10　线性探针",
+          "附11　TransNAS 七个任务",
+          "附12　NAS-Bench-101",
+          "附13　五种写法的学习曲线",
+          "附14　模型大小（规律 3）",
+          "附15　各层、两种取法（规律 4）",
+          "附16　模拟搜索的过程曲线",
+          "附17　COLE 写法的上限",
+          "附18　COLE 写法的学习曲线",
+          "三、关键代码",
+          "附19　结构写成代码",
+          "附20　提取 LLM 特征（平均池化）",
+          "附21　词频与计数上限",
+          "附22　回归头与单次评估",
+          "附23　模拟搜索",
+          "附24　文件索引"
+        ],
+        "images": [],
+        "notes": []
+      },
+      {
+        "page": 3,
+        "text": [
+          "结构的几种文本写法（同一个 NB201 结构）",
+          "附3",
+          "结构：边 0→1 conv1x1，边 2→3 skip，其余 4 条边 none",
+          "code（主实验用的写法）",
+          "class Cell(nn.Module):",
+          "    def forward(self, x0):",
+          "        x1 = self.conv1x1(x0)",
+          "        x2 = self.zero(x0) + self.zero(x1)",
+          "        x3 = self.zero(x0) + self.zero(x1) + self.identity(x2)",
+          "        return x3",
+          "edges（边列表）",
+          "edge 0->1: conv1x1",
+          "edge 0->2: zero",
+          "edge 1->2: zero",
+          "edge 0->3: zero",
+          "edge 1->3: zero",
+          "edge 2->3: identity",
+          "sorted（只列操作，位置完全删掉）",
+          "operations: conv1x1 identity zero zero zero zero",
+          "nl（自然语言）",
+          "The cell has four nodes. Node 1 applies conv1x1 to node 0. Node 2 adds zero of node 0 and zero of node 1. Node 3 adds zero of node 0, zero of node 1 and identity of node 2. The output is node 3.",
+          "posword（每个“位置 + 操作”一个专门的词，词频 = one-hot）",
+          "cell: tiger piano pencil mirror magnet tomato"
+        ],
+        "images": [],
+        "notes": []
+      },
+      {
+        "page": 4,
+        "text": [
+          "COLE 的写法（照它公开的 stringify_utils.py 重写）",
+          "附4",
+          "class ReLU_Conv2d_BatchNorm(nn.Module):",
+          "    def __init__(self, channels, kernel_size, stride, padding):",
+          "        super().__init__()",
+          "        self.op = nn.Sequential(",
+          "            nn.ReLU(inplace=False),",
+          "            nn.Conv2d(channels, channels, kernel_size, ...),",
+          "            nn.BatchNorm2d(channels))",
+          "    def forward(self, x):",
+          "        return self.op(x)",
+          "",
+          "class Cell(nn.Module):",
+          "    def __init__(self, channels):",
+          "        super().__init__()",
+          "        self.op_0_1 = ReLU_Conv2d_BatchNorm(channels, kernel_size=1, ...)",
+          "",
+          "    def forward(self, x):",
+          "        node_0 = x",
+          "        node_1 = self.op_0_1(node_0)",
+          "        node_2 = torch.zeros_like(node_0)",
+          "        node_3 = node_2",
+          "        return node_3",
+          "•  同一个结构（附3）在 COLE 写法下的样子",
+          "•  每条边有自己的名字 op_<起点>_<终点>",
+          "•  跳连写成 “+ node_<起点>”，none 直接省略",
+          "•  所以“哪条边放了什么”会改变数字 0～3 出现的次数：位置信息进了词频",
+          "•  NB201 的分组从 210 组变成 3536 组（附17）"
+        ],
+        "images": [],
+        "notes": []
+      },
+      {
+        "page": 5,
+        "text": [
+          "回归头与评估方式",
+          "附5",
+          "项目",
+          "设置",
+          "岭回归",
+          "RidgeCV，惩罚强度在 10⁻²～10⁵ 之间交叉验证自动选",
+          "随机森林",
+          "100 棵树，其余默认",
+          "MLP",
+          "两层各 64 个神经元，alpha = 0.01，学习率 0.001，最多 1000 轮，不做早停（未调参）",
+          "预处理",
+          "特征和预测目标都先标准化，预测完再换算回原单位",
+          "数据划分",
+          "按随机种子抽 n 个结构训练，其余全部作测试集；n = 10 / 50 / 100 / 500 / 1000 / 2000",
+          "种子数",
+          "20 个；部分实验在 n ≥ 1000 时减半以省时间",
+          "Kendall τ-b",
+          "测试集上预测排序和真实排序的一致程度（1 = 完全一致）",
+          "N@10",
+          "预测排前 10 的结构里，真实名次最好的那个排第几（1 = 找到了真正的第一）",
+          "显著性",
+          "同一批训练划分下的配对 Wilcoxon 检验"
+        ],
+        "images": [],
+        "notes": []
+      },
+      {
+        "page": 6,
+        "text": [
+          "NB201 主结果表（CIFAR-10，随机森林，20 个种子平均）",
+          "附6",
+          "特征来源",
+          "n=10",
+          "n=50",
+          "n=100",
+          "n=500",
+          "n=1000",
+          "n=2000",
+          "one-hot（手工编码）",
+          "0.185",
+          "0.345",
+          "0.461",
+          "0.649",
+          "0.710",
+          "0.772",
+          "Pythia-410M 第 0 步（随机初始化）",
+          "0.310",
+          "0.493",
+          "0.540",
+          "0.603",
+          "0.624",
+          "0.638",
+          "Pythia-410M 第 1000 步",
+          "0.306",
+          "0.483",
+          "0.535",
+          "0.620",
+          "0.646",
+          "0.669",
+          "Pythia-410M 第 10000 步",
+          "0.288",
+          "0.430",
+          "0.452",
+          "0.568",
+          "0.600",
+          "0.627",
+          "Pythia-410M 第 143000 步（训练完成）",
+          "0.296",
+          "0.468",
+          "0.495",
+          "0.590",
+          "0.618",
+          "0.644",
+          "Qwen2.5-0.5B",
+          "0.302",
+          "0.481",
+          "0.513",
+          "0.595",
+          "0.617",
+          "0.637",
+          "Qwen2.5-Coder-0.5B",
+          "0.264",
+          "0.454",
+          "0.501",
+          "0.583",
+          "0.607",
+          "0.630",
+          "•  随机初始化 Pythia 比 one-hot：n=10 +0.125，n=50 +0.147，n=100 +0.079（p<0.001）；n=500 起被反超，n=2000 −0.134",
+          "•  代码模型 Qwen-Coder 在所有样本数都略差于 Qwen（−0.007～−0.037，p<0.05）"
+        ],
+        "images": [],
+        "notes": []
+      },
+      {
+        "page": 7,
+        "text": [
+          "三种回归头 × 两个目标（CIFAR-10 精度、参数量）",
+          "附7",
+          "行 = 预测目标，列 = 回归头。参数量是合成目标，不可能靠预训练“背答案”：三种回归头下都是随机初始化 Pythia 最好",
+          "例外：MLP 回归头、样本多时，训练完成的 Pythia 比随机版本高 0.08～0.13（随机 Pythia 配 MLP 几乎不随样本数上涨）"
+        ],
+        "images": [
+          "D:\\CS\\Performance_Predictor\\docs\\ppt_review\\appendix_07_image1.png"
+        ],
+        "notes": []
+      },
+      {
+        "page": 8,
+        "text": [
+          "Pythia 训练过程中的变化（第 0 / 1000 / 10000 / 143000 步）",
+          "附8",
+          "预训练越久并没有越好：随机森林下，训练完成版本在 n=50～500 时比随机初始化差 0.013～0.045（p<0.05）"
+        ],
+        "images": [
+          "D:\\CS\\Performance_Predictor\\docs\\ppt_review\\appendix_08_image2.png"
+        ],
+        "notes": []
+      },
+      {
+        "page": 9,
+        "text": [
+          "操作计数 vs LLM 特征（三个数据集）",
+          "附9",
+          "n=10 时，5 个操作计数在 3 个数据集 × 3 种回归头下都比随机 Pythia 高 0.03～0.08（9 组里 7 组 p<0.05）",
+          "计数上限（全部 15625 个结构，210 组）：CIFAR-10 0.629，CIFAR-100 0.639，ImageNet16 0.628",
+          "计数 + one-hot（35 维）：n≤100 比 one-hot 高 0.07～0.16，n=2000 只低 0.02～0.03"
+        ],
+        "images": [
+          "D:\\CS\\Performance_Predictor\\docs\\ppt_review\\appendix_09_image3.png"
+        ],
+        "notes": []
+      },
+      {
+        "page": 10,
+        "text": [
+          "线性探针：特征里“写着”什么",
+          "附10",
+          "探针",
+          "随机初始化 Pythia",
+          "训练完成的模型",
+          "特征变化中能被操作计数线性解释的比例",
+          "75%",
+          "47%～51%",
+          "特征变化中能被 one-hot 线性解释的比例",
+          "99.5%",
+          "约 75%（约 25% 是 one-hot 也解释不了的）",
+          "从特征里读出“每条边放了什么”的准确率",
+          "96%～100%",
+          "96%～100%",
+          "•  随机 Pythia 的特征差不多就是“突出计数的 one-hot”",
+          "•  位置信息其实在特征里（读得出来），但占比小，回归头用不上",
+          "•  训练完成的模型多出来的那部分“别的东西”，在小样本时更像干扰",
+          "•  只读平均特征时第 0 层（词嵌入）99.8% 能被词频线性解释（附15）"
+        ],
+        "images": [],
+        "notes": []
+      },
+      {
+        "page": 11,
+        "text": [
+          "TransNAS-Bench-101 micro：七个任务",
+          "附11",
+          "n=10 时随机 Pythia 在 6/7 个任务上显著好于 one-hot（+0.10～+0.19）；n=1000 时 7 个任务全部被 one-hot 反超（差 0.11～0.26）",
+          "计数上限 0.42～0.56；和 NB201 不同，这里样本多时训练完成的 Pythia 比随机版本好（+0.05～+0.18）"
+        ],
+        "images": [
+          "D:\\CS\\Performance_Predictor\\docs\\ppt_review\\appendix_11_image4.png"
+        ],
+        "notes": []
+      },
+      {
+        "page": 12,
+        "text": [
+          "NAS-Bench-101：连线方式自由的空间",
+          "附12",
+          "只数 3 种操作不够（上限 0.46），但再加 3 个代码里看得见的连线计数（共 6 个数），小样本优势和上限同样能复现",
+          "预先定好的词频检验也支持这一点；随机 Pythia 配随机森林在 n=1000 时 0.603"
+        ],
+        "images": [
+          "D:\\CS\\Performance_Predictor\\docs\\ppt_review\\appendix_12_image5.png"
+        ],
+        "notes": []
+      },
+      {
+        "page": 13,
+        "text": [
+          "五种写法的学习曲线",
+          "附13",
+          "四种只能数操作的写法（code、edges、sorted、nl）上限一样；posword 小样本弱、大样本最好，但配随机森林仍低于 one-hot",
+          "原因：信息被“搅拌”到很多维度，随机森林只能逐维切分。把 one-hot 随机旋转，随机森林从 0.710 掉到 0.563，岭回归不变"
+        ],
+        "images": [
+          "D:\\CS\\Performance_Predictor\\docs\\ppt_review\\appendix_13_image6.png"
+        ],
+        "notes": []
+      },
+      {
+        "page": 14,
+        "text": [
+          "模型大小（规律 3）：LLM τ 与词频 τ 的吻合程度",
+          "附14",
+          "模型",
+          "随机初始化：相关系数 / 平均差距",
+          "训练完成：相关系数 / 平均差距",
+          "Pythia-70M",
+          "0.929 / 0.036",
+          "0.861 / 0.054",
+          "Pythia-160M",
+          "0.934 / 0.035",
+          "0.872 / 0.053",
+          "Pythia-410M",
+          "0.928 / 0.037",
+          "0.883 / 0.053",
+          "Pythia-1B",
+          "0.935 / 0.035",
+          "0.875 / 0.051",
+          "Qwen2.5-0.5B",
+          "—",
+          "0.863 / 0.054",
+          "•  125 个点 = 5 种写法 × 5 个“空间-任务” × 5 种样本数，随机森林；岭回归下 9 个模型都在 0.87～0.90",
+          "•  Qwen 去掉 posword 后相关系数 0.92"
+        ],
+        "images": [],
+        "notes": []
+      },
+      {
+        "page": 15,
+        "text": [
+          "各层、两种取法（规律 4，完整版）",
+          "附15",
+          "上排 n=10，下排 n=1000；蓝 / 红 = 随机 / 训练完成，实线 = 平均，虚线 = 最后一个 token，点线 = 词频，黑线 = one-hot",
+          "第 6 层以后曲线基本是平的；最好的组合是训练完成模型第 6 层平均（NB201 0.663），仍低于 one-hot"
+        ],
+        "images": [
+          "D:\\CS\\Performance_Predictor\\docs\\ppt_review\\appendix_15_image7.png"
+        ],
+        "notes": []
+      },
+      {
+        "page": 16,
+        "text": [
+          "模拟搜索的过程曲线（中位数名次，越低越好）",
+          "附16",
+          "横轴 = 已经测了几个结构，纵轴 = 找到的最好结构在池子里排第几；虚线为随机搜索",
+          "50 次里输给 one-hot 的次数：自编码器 11 次，其余任务 4～8 次"
+        ],
+        "images": [
+          "D:\\CS\\Performance_Predictor\\docs\\ppt_review\\appendix_16_image8.png"
+        ],
+        "notes": []
+      },
+      {
+        "page": 17,
+        "text": [
+          "COLE 写法的上限（全部结构，只知道词频时的最好排序）",
+          "附17",
+          "空间 / 任务",
+          "我们的写法：上限（组数）",
+          "COLE 写法：上限（组数）",
+          "NB201 CIFAR-10",
+          "0.629（210）",
+          "0.702（3536）",
+          "NB201 CIFAR-100",
+          "0.639（210）",
+          "0.723（3536）",
+          "NB201 ImageNet16",
+          "0.628（210）",
+          "0.711（3536）",
+          "TransNAS 场景分类",
+          "0.563（84）",
+          "0.644（1503）",
+          "TransNAS 物体分类",
+          "0.495（84）",
+          "0.586（1503）",
+          "TransNAS 拼图",
+          "0.481（84）",
+          "0.579（1503）",
+          "TransNAS 房间布局",
+          "0.510（84）",
+          "0.628（1503）",
+          "TransNAS 语义分割",
+          "0.530（84）",
+          "0.629（1503）",
+          "TransNAS 表面法向",
+          "0.558（84）",
+          "0.644（1503）",
+          "TransNAS 自编码器",
+          "0.424（84）",
+          "0.667（1503）",
+          "词频用 Pythia 的分词器；COLE 实际用的是 CodeLlama 的分词器"
+        ],
+        "images": [],
+        "notes": []
+      },
+      {
+        "page": 18,
+        "text": [
+          "COLE 写法的学习曲线（NB201 CIFAR-10，随机森林）",
+          "附18",
+          "特征",
+          "n=10",
+          "n=50",
+          "n=100",
+          "n=500",
+          "n=1000",
+          "n=2000",
+          "one-hot",
+          "0.201",
+          "0.371",
+          "0.457",
+          "0.655",
+          "0.712",
+          "0.778",
+          "我们的写法：词频",
+          "0.418",
+          "0.538",
+          "0.564",
+          "0.597",
+          "0.615",
+          "0.622",
+          "我们的写法：随机 Pythia",
+          "0.379",
+          "0.515",
+          "0.557",
+          "0.619",
+          "0.638",
+          "0.651",
+          "我们的写法：训练完成 Pythia",
+          "0.353",
+          "0.467",
+          "0.512",
+          "0.603",
+          "0.626",
+          "0.650",
+          "COLE 写法：词频",
+          "0.399",
+          "0.498",
+          "0.525",
+          "0.580",
+          "0.600",
+          "0.617",
+          "COLE 写法：随机 Pythia",
+          "0.454",
+          "0.521",
+          "0.554",
+          "0.616",
+          "0.633",
+          "0.650",
+          "COLE 写法：训练完成 Pythia",
+          "0.414",
+          "0.516",
+          "0.545",
+          "0.603",
+          "0.627",
+          "0.651",
+          "•  岭回归、MLP 下 COLE 写法最高分别为 0.522、0.574；所有组合最高 0.651，COLE 报告 0.797",
+          "•  COLE 写法下 LLM 和词频差 −0.05～+0.04（n=2000），规律 2 仍成立"
+        ],
+        "images": [],
+        "notes": []
+      },
+      {
+        "page": 19,
+        "text": [
+          "关键代码 1：结构写成代码（arch_text.py）",
+          "附19",
+          "OP_CODE = {\"none\": \"self.zero\", \"skip_connect\": \"self.identity\",",
+          "           \"nor_conv_1x1\": \"self.conv1x1\", \"nor_conv_3x3\": \"self.conv3x3\",",
+          "           \"avg_pool_3x3\": \"self.avgpool3x3\"}",
+          "",
+          "def arch_to_code(arch, anonymous=False):",
+          "    \"\"\"arch 是 6 个操作名组成的列表（顺序与 EDGES 一致），返回一段代码文本。\"\"\"",
+          "    names = OP_CODE_ANON if anonymous else OP_CODE",
+          "    terms = {1: [], 2: [], 3: []}          # 按终点节点把边分组：哪些边流入 x1、x2、x3",
+          "    for (src, dst), op in zip(EDGES, arch):",
+          "        terms[dst].append(f\"{names[op]}(x{src})\")",
+          "    lines = [\"class Cell(nn.Module):\",",
+          "             \"    def forward(self, x0):\",",
+          "             f\"        x1 = {' + '.join(terms[1])}\",",
+          "             f\"        x2 = {' + '.join(terms[2])}\",",
+          "             f\"        x3 = {' + '.join(terms[3])}\",",
+          "             \"        return x3\"]",
+          "    return \"\\n\".join(lines)"
+        ],
+        "images": [],
+        "notes": []
+      },
+      {
+        "page": 20,
+        "text": [
+          "关键代码 2：提取 LLM 特征——冻结、取最后一层平均（embed.py）",
+          "附20",
+          "def load_model(model_dir):",
+          "    tokenizer = AutoTokenizer.from_pretrained(model_dir)",
+          "    if tokenizer.pad_token is None:          # Pythia 没有填充符，借用\"结束符\"",
+          "        tokenizer.pad_token = tokenizer.eos_token",
+          "    model = AutoModel.from_pretrained(model_dir, dtype=torch.float32)",
+          "    model.eval()                             # 推理模式，不训练",
+          "    return tokenizer, model",
+          "",
+          "@torch.no_grad()                             # 只做前向，不算梯度",
+          "def embed_texts(tokenizer, model, texts, batch_size=16):",
+          "    means = []",
+          "    for start in range(0, len(texts), batch_size):",
+          "        chunk = texts[start:start + batch_size]",
+          "        batch = tokenizer(chunk, return_tensors=\"pt\", padding=True)",
+          "        hidden = model(**batch).last_hidden_state              # (批大小, token 数, 隐藏维度)",
+          "        mask = batch[\"attention_mask\"].unsqueeze(-1).float()   # 补齐的 token 不参与平均",
+          "        means.append(((hidden * mask).sum(dim=1) / mask.sum(dim=1)).numpy())",
+          "    return np.concatenate(means)",
+          "（精简版：去掉了进度条和“分行特征”部分）"
+        ],
+        "images": [],
+        "notes": []
+      },
+      {
+        "page": 21,
+        "text": [
+          "关键代码 3：词频特征与计数上限（make_bow.py、explain.py）",
+          "附21",
+          "def bow(texts, tokenizer):",
+          "    \"\"\"词频：每段文本里每种 token 出现几次；去掉所有结构都一样的 token。\"\"\"",
+          "    counts = [Counter(tokenizer(t)[\"input_ids\"]) for t in texts]",
+          "    vocab = sorted(set().union(*counts))",
+          "    X = np.array([[c.get(v, 0) for v in vocab] for c in counts], dtype=np.float32)",
+          "    keep = X.std(axis=0) > 0",
+          "    return X[:, keep], [tokenizer.decode([v]) for v, k in zip(vocab, keep) if k]",
+          "",
+          "def op_counts(onehot):",
+          "    \"\"\"30 维 one-hot（6 条边 × 5 种操作）按边加起来 → 5 种操作各出现几次。\"\"\"",
+          "    return onehot.reshape(-1, 6, 5).sum(axis=1)",
+          "",
+          "def count_ceiling(counts, y):",
+          "    \"\"\"只知道计数时的最好排序：同一组的结构都预测为这组的真实平均精度。\"\"\"",
+          "    _, group = np.unique(counts, axis=0, return_inverse=True)",
+          "    group = group.ravel()",
+          "    group_mean = np.bincount(group, weights=y) / np.bincount(group)",
+          "    return kendalltau(group_mean[group], y).statistic, group.max() + 1"
+        ],
+        "images": [],
+        "notes": []
+      },
+      {
+        "page": 22,
+        "text": [
+          "关键代码 4：回归头与单次评估（evaluate.py、explain.py）",
+          "附22",
+          "def make_head(head, seed):",
+          "    if head == \"ridge\":",
+          "        model = RidgeCV(alphas=np.logspace(-2, 5, 15))",
+          "    elif head == \"rf\":",
+          "        model = RandomForestRegressor(n_estimators=100, random_state=seed, n_jobs=-1)",
+          "    elif head == \"mlp\":",
+          "        model = MLPRegressor(hidden_layer_sizes=(64, 64), alpha=1e-2, learning_rate_init=1e-3,",
+          "                             max_iter=1000, random_state=seed)",
+          "    return TransformedTargetRegressor(regressor=make_pipeline(StandardScaler(), model),",
+          "                                      transformer=StandardScaler())",
+          "",
+          "def run_one(X, y, n, seed, head):",
+          "    \"\"\"用种子 seed 抽 n 个结构训练，其余全部当测试集。\"\"\"",
+          "    perm = np.random.default_rng(seed).permutation(len(y))",
+          "    tr, te = perm[:n], perm[n:]",
+          "    pred = make_head(head, seed).fit(X[tr], y[tr]).predict(X[te])",
+          "    return kendalltau(pred, y[te]).statistic, n_at_k(pred, y[te])",
+          "",
+          "def n_at_k(pred, true, k=10):",
+          "    \"\"\"预测排前 k 的结构里，真实名次最好的那个是第几名。\"\"\"",
+          "    true_rank = np.argsort(np.argsort(-true)) + 1",
+          "    return int(true_rank[np.argsort(-pred)[:k]].min())"
+        ],
+        "images": [],
+        "notes": []
+      },
+      {
+        "page": 23,
+        "text": [
+          "关键代码 5：模拟搜索（step6_search.py）",
+          "附23",
+          "def search_once(X, y, run, budget=200, init=10, step=10):",
+          "    \"\"\"一次搜索，返回每测完一批后\"找到的最好结构在池子里排第几\"。X=None 表示随机搜索。\"\"\"",
+          "    rng = np.random.default_rng(1000 + run)",
+          "    true_rank = np.argsort(np.argsort(-y)) + 1",
+          "    tested = list(rng.choice(len(y), size=init, replace=False))      # 先随机测 10 个",
+          "    history = [(len(tested), int(true_rank[tested].min()))]",
+          "    while len(tested) < budget:",
+          "        rest = np.setdiff1d(np.arange(len(y)), tested)",
+          "        if X is None:",
+          "            new = rng.choice(rest, size=step, replace=False)",
+          "        else:",
+          "            model = make_head(\"rf\", run)                              # 用测过的结构训练随机森林",
+          "            pred = model.fit(X[tested], y[tested]).predict(X[rest])",
+          "            new = rest[np.argsort(-pred)[:step]]                      # 测预测最好的 10 个",
+          "        tested += list(new)",
+          "        history.append((len(tested), int(true_rank[tested].min())))",
+          "    return history"
+        ],
+        "images": [],
+        "notes": []
+      },
+      {
+        "page": 24,
+        "text": [
+          "文件索引（仓库 llm_demo/ 下）",
+          "附24",
+          "内容",
+          "代码",
+          "结果",
+          "主实验：LLM 特征 vs one-hot",
+          "embed.py、evaluate.py",
+          "results/summary.txt、fig1、fig2",
+          "解释实验：计数、上限、探针",
+          "explain.py",
+          "results/step1/",
+          "打乱位置、TransNAS、NB101",
+          "step2.py",
+          "results/step2/",
+          "规律 2、3：写法、模型大小",
+          "formats.py、run_formats.py、step3_formats.py",
+          "results/step3/",
+          "规律 4：层与取法",
+          "run_layers.py、step5_layers.py",
+          "results/step5/",
+          "规律 5：模拟搜索",
+          "step6_search.py",
+          "results/step6/",
+          "COLE 写法对照",
+          "formats.py（cole）、step7_cole.py",
+          "results/step7/",
+          "全部结论汇总",
+          "—",
+          "RESULTS.md",
+          "仓库：https://github.com/huang-husky/NAS-PP"
+        ],
+        "images": [],
+        "notes": []
+      }
+    ]
+  },
+  {
+    "file": "D:\\CS\\Performance_Predictor\\docs\\Progress_Report_v2 11-04.pptx",
+    "sha256": "b598622163038a0946d696c7e9b7d7a167e4a4159f0f71fb78e30e7ac65f4815",
+    "slides": [
+      {
+        "page": 1,
+        "text": [
+          "Frozen LLM Features for NAS Performance Prediction",
+          "Progress Report",
+          "Presenter: Xiangqi Huang",
+          "November 2026"
+        ],
+        "images": [],
+        "notes": [
+          ""
+        ]
+      },
+      {
+        "page": 2,
+        "text": [
+          "Motivation: what does an LLM encoding really contribute?",
+          "2",
+          "•  Recent work writes architectures as text or code and uses language models to predict performance (e.g., Akhauri et al., ICML 2026)",
+          "•  Architecture encoding strongly affects performance predictors (White et al., NeurIPS 2020; 2021), but what LLM-based encodings actually encode has not been tested",
+          "•  Existing work compares different LLM backbones (e.g., CodeLlama vs. Llama, model sizes), but rarely includes two controls: (a) the same LLM without pretraining (random init), and (b) token counts of the text, with no LLM at all",
+          "Two questions",
+          "①  Do frozen LLM features encode the full architecture (which op sits on which edge), or only a coarse summary (how many times each op is used)?",
+          "②  How much does pretrained knowledge help? (Same LLM: pretrained vs. random init; plus comparison with non-LLM encodings such as one-hot)"
+        ],
+        "images": [],
+        "notes": []
+      },
+      {
+        "page": 3,
+        "text": [
+          "Setup: how features are built and how predictors are evaluated",
+          "3",
+          "Pipeline: architecture → PyTorch-style code → frozen LLM → mean of last-layer outputs = feature vector",
+          "Evaluation",
+          "1.  Sample n labeled architectures (n = 10–2000) and train a regressor (ridge / random forest / MLP) on their features",
+          "2.  Predict all remaining architectures in the search space",
+          "3.  Kendall τ between predicted and true ranking (1 = perfect); N@10 = true rank of the best architecture among the top-10 predicted",
+          "4.  20 random seeds; same pipeline with non-LLM features (one-hot, op counts, token counts) as controls",
+          "Search spaces",
+          "NAS-Bench-201 (all 15,625); TransNAS-Bench-101 micro (all 4,096, 7 tasks); NAS-Bench-101 (5,000 random)",
+          "LLMs",
+          "Pythia 70M / 160M / 410M / 1B, each at random init and fully trained; Qwen2.5-0.5B; all frozen",
+          "Controls",
+          "one-hot (hand-crafted); op counts (5 numbers); token counts of the code (bag of words)",
+          "Statistics",
+          "Paired Wilcoxon test over seeds (same training splits)"
+        ],
+        "images": [],
+        "notes": []
+      },
+      {
+        "page": 4,
+        "text": [
+          "Main finding: strong with few samples, overtaken with many",
+          "4",
+          "NB201: with 10 training architectures, LLM 0.310 vs one-hot 0.185; with 2000, the LLM stalls at 0.638 while one-hot rises to 0.772. The LLM curve stays on the green ceiling line."
+        ],
+        "images": [
+          "D:\\CS\\Performance_Predictor\\docs\\ppt_review\\progress_04_image1.png"
+        ],
+        "notes": [
+          "The black line is one-hot; blue and red are random and trained Pythia. With few samples the LLM is clearly better; with many, one-hot overtakes it, and the LLM curve stays on the green dotted line, which is the ceiling reachable when you only know how many times each op is used. All three spaces look the same."
+        ]
+      },
+      {
+        "page": 5,
+        "text": [
+          "Explanation: LLM features ≈ token counts of the code",
+          "5",
+          "Where the ceiling comes from: by \"how many times each op is used\", the 15,625 architectures fall into only 210 groups; even knowing each group's true mean accuracy, τ is at most 0.629",
+          "①  Counts are enough",
+          "Just 5 op counts reproduce the LLM's small-sample advantage, and do even better",
+          "②  Position barely matters",
+          "Randomly moving ops to other edges barely changes LLM features with few samples",
+          "③  Probing",
+          "75% of the variance in random-Pythia features is linearly explained by op counts",
+          "④  Direct comparison",
+          "Token counts of the code give learning curves almost identical to the LLM features",
+          "Pretraining gives no consistent benefit: the randomly initialized model is often the best (exceptions: TransNAS and the MLP head with many samples)"
+        ],
+        "images": [],
+        "notes": [
+          "Where the ceiling comes from: counting how often each op is used splits the 15,625 architectures into only 210 groups that cannot be separated, so τ is at most 0.629. All four pieces of evidence say LLM features are basically token counts. A side result: pretraining gives no consistent benefit."
+        ]
+      },
+      {
+        "page": 6,
+        "text": [
+          "Rule 2: the text format, not the model, sets the ceiling",
+          "6",
+          "•  The same architecture in 5 formats: code, edge list, sorted ops, natural language, posword",
+          "•  Correlation between LLM τ and the format's token-count τ: random Pythia 0.93, trained 0.88, Qwen 0.86",
+          "•  The mean gap is only about 0.04",
+          "•  Only posword (one dedicated word per \"position + op\") has no ceiling",
+          "An LLM cannot create information that is not in the text: to raise the ceiling, change the format, not the model"
+        ],
+        "images": [
+          "D:\\CS\\Performance_Predictor\\docs\\ppt_review\\progress_06_image2.png"
+        ],
+        "notes": [
+          "The same architecture written in 5 formats. Each point is one format, space, task and sample size; the x-axis is the token-count score of that format, the y-axis the LLM score. Points lie on the diagonal: whatever the LLM achieves, token counts achieve too. Only posword, with one word per position and op, has no ceiling."
+        ]
+      },
+      {
+        "page": 7,
+        "text": [
+          "Rules 3–4: size, layer and pooling don't remove the ceiling",
+          "7",
+          "Rule 3: Pythia 70M → 1B (14×): the correlation with token counts does not change (random 0.93, trained 0.86–0.88); Qwen2.5-0.5B is also 0.86",
+          "Rule 4: layers 6–24, mean or last token: all 0.61–0.66 (one-hot 0.709); probes can read position (≈99%), but the regression head cannot use it"
+        ],
+        "images": [
+          "D:\\CS\\Performance_Predictor\\docs\\ppt_review\\progress_07_image4.png",
+          "D:\\CS\\Performance_Predictor\\docs\\ppt_review\\progress_07_image3.png"
+        ],
+        "notes": [
+          "Left: from Pythia 70M to 1B, the agreement between the LLM and token counts does not change, and Qwen is the same. Right: layers 6 to 24, mean or last token, all stay at 0.61 to 0.66 on NB201, versus 0.709 for one-hot. Probes can read which op sits on each edge, but this is swamped by the counts and the regression head cannot use it."
+        ]
+      },
+      {
+        "page": 8,
+        "text": [
+          "Rule 5: in search, this becomes an advantage",
+          "8",
+          "Setup: evaluate 10 random architectures, then a random-forest predictor picks 10 per round up to 200; 50 runs per feature. The table shows how often the true best architecture is found",
+          "Feature",
+          "NB201",
+          "NB101",
+          "TransNAS scene",
+          "TransNAS segment",
+          "TransNAS ",
+          "autoencoder",
+          "Mean",
+          "Random search",
+          "0%",
+          "4%",
+          "2%",
+          "4%",
+          "6%",
+          "3%",
+          "one-hot",
+          "42%",
+          "44%",
+          "28%",
+          "38%",
+          "6%",
+          "32%",
+          "Counts + one-hot",
+          "58%",
+          "50%",
+          "44%",
+          "58%",
+          "10%",
+          "44%",
+          "Token counts (no LLM)",
+          "80%",
+          "58%",
+          "60%",
+          "80%",
+          "24%",
+          "60%",
+          "Random Pythia-410M",
+          "82%",
+          "66%",
+          "64%",
+          "86%",
+          "40%",
+          "68%",
+          "Trained Pythia-410M",
+          "90%",
+          "16%",
+          "80%",
+          "82%",
+          "30%",
+          "60%",
+          "Qwen2.5-0.5B",
+          "96%",
+          "46%",
+          "76%",
+          "76%",
+          "2%",
+          "59%",
+          "Random Pythia is significantly better than one-hot on all 5 tasks (p = 2×10⁻⁵–0.003); trained models are unstable, e.g. Qwen reaches 96% on NB201 but only 2% on autoencoder"
+        ],
+        "images": [],
+        "notes": [
+          "Simulated search: evaluate 10 random architectures, then the random-forest predictor picks 10 per round up to 200, 50 runs per feature. Random Pythia finds the true best 68% of the time on average, one-hot only 32%, and it is significantly better on all five tasks. The reason: search has very few samples, exactly where token-count features are strong. Trained models are unstable."
+        ]
+      },
+      {
+        "page": 9,
+        "text": [
+          "COLE check: its high score does not come from its format",
+          "9",
+          "COLE (GECCO 2026) reads NB201 code with a frozen CodeLlama-7B and reports τ = 0.797, above our ceiling of 0.63 → we reproduced its format from its public code",
+          "NB201, random forest, n = 2000",
+          "Our format",
+          "COLE format",
+          "Ceiling (group means)",
+          "0.63",
+          "0.70～0.72",
+          "Token counts",
+          "0.622",
+          "0.617",
+          "Random Pythia-410M",
+          "0.651",
+          "0.650",
+          "Trained Pythia-410M",
+          "0.650",
+          "0.651",
+          "one-hot (control)",
+          "0.778",
+          "—",
+          "•  COLE's format brings position into the token counts, so the theoretical ceiling rises",
+          "•  But the learned predictors do not improve: position is mixed into the counts of the digits 0–3, and 2000 samples are not enough to learn it",
+          "•  The most likely reason is COLE's regression head (PCA to 128 dims + MLP + ranking loss), to be verified",
+          "0.797 is on par with one-hot + random forest (0.778): it does not go beyond what the architecture itself provides"
+        ],
+        "images": [],
+        "notes": [
+          "COLE's reported 0.797 is above our ceiling, so we reproduced its format from its public code. The format does raise the theoretical ceiling to about 0.7, but the learned predictors stay at 0.65, the same as with our format. So 0.797 does not come from the format; most likely it comes from the regression head, which still needs checking."
+        ]
+      },
+      {
+        "page": 10,
+        "text": [
+          "Summary",
+          "10",
+          "Mean-pooled frozen LLM features ≈ token counts of the code",
+          "This explains three phenomena at once:",
+          "Better than one-hot with few samples: token counts split architectures into a few groups, which are easy to learn",
+          "Capped with many samples: architectures in the same group cannot be told apart",
+          "No consistent gain from pretraining: token counts leave no room for pretrained knowledge",
+          "Holds across 3 search spaces · 5 formats · Pythia 70M–1B · Qwen2.5-0.5B; in search it is even an advantage"
+        ],
+        "images": [],
+        "notes": [
+          "In one sentence: mean-pooled frozen LLM features are basically token counts of the code. This explains three phenomena at once and holds across three spaces, five formats, and models of different sizes and families."
+        ]
+      },
+      {
+        "page": 11,
+        "text": [
+          "Limitations: so far only \"evaluate → find patterns\"",
+          "11",
+          "Following the route of Ji et al., Loss Functions for Predictor-Based NAS (ICCV 2025): evaluate under a unified setting → find patterns → propose a method based on them",
+          "No method yet",
+          "We found and explained the problem, but have not yet proposed a new predictor based on it",
+          "Limited scale",
+          "The largest model is only 1B; only 3 tabular benchmarks, no larger space such as DARTS",
+          "No comparison with specialized predictors",
+          "Not yet compared with GNN, CAP, DAP or other dedicated predictors"
+        ],
+        "images": [],
+        "notes": [
+          "Following the route of Ji et al.'s Loss Functions for Predictor-Based NAS: unified evaluation, find patterns, then propose a method. We have done the first two steps. Three things are missing: a method, scale, and a comparison with specialized predictors."
+        ]
+      },
+      {
+        "page": 12,
+        "text": [
+          "Next steps",
+          "12",
+          "Task",
+          "Purpose",
+          "Verify rules 2–3 on 7B-scale models",
+          "Check whether the rules still hold for larger models",
+          "Compare with specialized predictors (GNN, CAP or DAP)",
+          "See where LLM features stand",
+          "Redo the COLE check with COLE's regression head",
+          "Tell whether 0.797 comes from the head or the model",
+          "Decide on and implement a new method",
+          "The core contribution of the paper",
+          "Initial ideas (not yet verified)",
+          "•  Idea 1: token-count-like features excel with few samples, one-hot with many → a coarse-to-fine surrogate that adapts to the sample size, for evolutionary NAS",
+          "•  Idea 2: make the LLM actually use its pretrained knowledge, e.g. by fine-tuning"
+        ],
+        "images": [],
+        "notes": [
+          "Four next steps: the first three fill in experiments; the fourth is the method, the core of the paper. Both initial ideas are unverified; I would like your advice on the direction and on which of the first three to do first."
+        ]
+      }
+    ]
+  }
+]

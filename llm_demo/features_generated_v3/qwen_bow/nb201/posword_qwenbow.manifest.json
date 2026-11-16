@@ -1,0 +1,26 @@
+{
+  "context": {
+    "kind": "bow-qwen",
+    "texts": "5fa24833bceb1f6105711d3ca72c05ef7344f4f551705c4973f33aed761dafec",
+    "pool": "0910d0125d157d6766b3d01629f6ba3422b8589c347c1ee7824e52ace67fb5a4",
+    "model": {
+      "config.json": "479dcf0c5286339e41ad3992cd08ae88a467c4187587936248e2b7c96283484b",
+      "generation_config.json": "8c970692323e3ea0e9b8b0a4dca79388d31226e41f83c9fd6014804280ebf6e8",
+      "merges.txt": "599bab54075088774b1733fde865d5bd747cbcc7a547c5bc12610e874e26f5e3",
+      "model.safetensors": "88c142557820ccad55bb59756bfcfcf891de9cc6202816bd346445188a0ed342",
+      "tokenizer.json": "c0382117ea329cdf097041132f6d735924b697924d6f6fc3945713e96ce87539",
+      "tokenizer_config.json": "c91efca15ceff6e9ee9424db58a6f59cd41294e550a86cbd07e3c1fb500b34f9",
+      "vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+    },
+    "sources": "71d67b90977666060bdf6ffa424f4ce99a9e010e49ec0f2a99784f4555ad5346",
+    "data": {
+      "D:\\CS\\Performance_Predictor\\predictor_lab\\data\\nasbench101.csv": "1e5b566c70353dbe74d35d88ae3e3d30746d95caed4b0a79024123da641d5ca0",
+      "D:\\CS\\Performance_Predictor\\predictor_lab\\data\\nasbench201.csv": "93d72cae349b5714371d46225d03158005f07c9821c3bea3cd3c6c62c9d25c7c",
+      "D:\\CS\\Performance_Predictor\\predictor_lab\\data\\transnas_micro.csv": "0b126111ae713b36b53a97a099bcec2177c3bda7e30fa52ec78d7e1d8eeb7c26"
+    },
+    "numpy": "2.4.4",
+    "transformers": "5.5.0",
+    "torch": "2.10.0+cpu"
+  },
+  "sha256": "b8f528a743fb970e7d3405c979c3522f8ea0e4f9ddb5968b9bd5d43fb5157734"
+}

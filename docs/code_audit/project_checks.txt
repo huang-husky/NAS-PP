@@ -1,0 +1,32 @@
+Python syntax passed: 29 files
+llm_demo\results\results.csv: rows=5040 duplicate=0 NaN_tau=0 out_of_range=0
+llm_demo\results\step1\curves.csv: rows=7560 duplicate=0 NaN_tau=0 out_of_range=0
+llm_demo\results\step2\curves_nb101.csv: rows=1890 duplicate=0 NaN_tau=0 out_of_range=0
+llm_demo\results\step2\curves_nb201.csv: rows=5040 duplicate=0 NaN_tau=0 out_of_range=0
+llm_demo\results\step2\curves_transnas.csv: rows=15120 duplicate=0 NaN_tau=0 out_of_range=0
+llm_demo\results\step3\curves_nb101.csv: rows=9180 duplicate=0 NaN_tau=0 out_of_range=0
+llm_demo\results\step3\curves_nb201.csv: rows=9180 duplicate=0 NaN_tau=0 out_of_range=0
+llm_demo\results\step3\curves_transnas.csv: rows=27540 duplicate=0 NaN_tau=0 out_of_range=0
+llm_demo\results\step5\curves_nb101.csv: rows=1980 duplicate=0 NaN_tau=0 out_of_range=0
+llm_demo\results\step5\curves_nb201.csv: rows=1980 duplicate=0 NaN_tau=0 out_of_range=0
+llm_demo\results\step5\curves_transnas.csv: rows=5940 duplicate=0 NaN_tau=0 out_of_range=0
+llm_demo\results\step7\curves_all.csv: rows=8400 duplicate=0 NaN_tau=0 out_of_range=0
+llm_demo\results\step7\curves_nb201.csv: rows=2100 duplicate=0 NaN_tau=0 out_of_range=0
+llm_demo\results\step7\curves_transnas.csv: rows=6300 duplicate=0 NaN_tau=0 out_of_range=0
+nb201 base pool size=15625 identity=True unique=15625
+transnas base pool size=4096 identity=True unique=4096
+nb101 base pool size=5000 identity=False unique=5000
+llm_demo\features: 21 arrays checked rowcount/finite; bad=[]
+llm_demo\features\nb101: 3 arrays checked rowcount/finite; bad=[]
+llm_demo\features\transnas: 7 arrays checked rowcount/finite; bad=[]
+llm_demo\features\formats\nb101: 50 arrays checked rowcount/finite; bad=[]
+llm_demo\features\formats\nb201: 53 arrays checked rowcount/finite; bad=[]
+llm_demo\features\formats\transnas: 53 arrays checked rowcount/finite; bad=[]
+llm_demo\features\layers\nb101: 21 arrays checked rowcount/finite; bad=[]
+llm_demo\features\layers\nb201: 21 arrays checked rowcount/finite; bad=[]
+llm_demo\features\layers\transnas: 21 arrays checked rowcount/finite; bad=[]
+predictor_lab\data\nasbench101.csv: rows=423624 missing=0; ties_at_max={'test_acc': 1, 'valid_acc': 1, 'train_acc': 180413}
+predictor_lab\data\nasbench201.csv: rows=15625 missing=0; ties_at_max={'cifar10_acc': 2, 'cifar100_acc': 1, 'imagenet16_acc': 1, 'cifar10_acc_epoch12': 2}
+predictor_lab\data\transnas_micro.csv: rows=4096 missing=0; ties_at_max={'class_scene_valid': 1, 'class_object_valid': 1, 'jigsaw_valid': 1, 'room_layout_valid': 1, 'segmentsemantic_valid': 1, 'normal_valid': 1, 'autoencoder_valid': 2}
+search terminal queries={200: 2000}
+search duplicate=0

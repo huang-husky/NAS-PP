@@ -10,12 +10,35 @@ MODEL_DIR = Path(__file__).parent / "models"
 
 
 def has_weights(model_dir):
-    """模型文件夹里有没有完整的权重文件（大于 100MB 才算）。"""
-    for f in ["pytorch_model.bin", "model.safetensors"]:
-        p = Path(model_dir) / f
-        if p.exists() and p.stat().st_size > 100e6:
-            return True
-    return False
+    """Check readable weight containers; verify recorded checksums when available."""
+    import json
+    import zipfile
+    model_dir = Path(model_dir)
+    try:
+        json.loads((model_dir / "config.json").read_text(encoding="utf8"))
+        files = [p for p in [model_dir / "pytorch_model.bin", model_dir / "model.safetensors"] if p.exists()]
+        if not files:
+            return False
+        for path in files:
+            if path.suffix == ".bin":
+                with zipfile.ZipFile(path) as archive:
+                    if not any(n.endswith("data.pkl") for n in archive.namelist()):
+                        return False
+            else:
+                from safetensors import safe_open
+                with safe_open(path, framework="np") as archive:
+                    if not list(archive.keys()):
+                        return False
+        provenance = model_dir / "provenance.json"
+        if provenance.exists():
+            from artifacts import file_hash
+            recorded = json.loads(provenance.read_text(encoding="utf8"))["weights"]
+            if any(recorded.get(p.name) != file_hash(p) for p in files):
+                return False
+        return True
+    except (OSError, ValueError, KeyError, zipfile.BadZipFile):
+        return False
+
 
 MODELS = {
     # Pythia-410M 剂量曲线：同一个模型、同样的结构和分词器，只差"预训练了多少步"

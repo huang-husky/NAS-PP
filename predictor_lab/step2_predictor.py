@@ -19,7 +19,6 @@ from sklearn.ensemble import RandomForestRegressor
 import checks
 from nb201 import OPS, OUTPUT_DIR, load_dataset
 
-archs, acc = load_dataset()
 
 
 # ======================================================================
@@ -46,94 +45,100 @@ def encode(arch):
     return vec
 
 
-checks.check_encode(encode)
+def main():
+    checks.check_encode(encode)
+    archs, acc = load_dataset()
 
-# 把全部 15625 个结构都编码，得到形状为 (15625, 30) 的矩阵 X；标签 y 就是精度
-X = np.array([encode(arch) for arch in archs])
-y = acc
-print("X 的形状:", X.shape, " y 的形状:", y.shape)
-
-
-# ======================================================================
-# TODO 2：划分训练集和测试集
-# ----------------------------------------------------------------------
-# 现实中训练一个结构要几个小时，所以预测器只能用很少的"已训练结构"来学习。
-# 这里假装我们只训练得起 N_TRAIN 个结构，其余的全部用来检验预测得准不准。
-#
-# perm 是 0 ~ 15624 被随机打乱后的顺序。请取它的前 N_TRAIN 个作为训练集的下标，
-# 剩下的作为测试集的下标。
-#
-# 会用到切片：
-#     a[:3]    a 的前 3 个元素
-#     a[3:]    从第 3 个开始到最后的所有元素
-# ======================================================================
-N_TRAIN = 200
-rng = np.random.default_rng(seed=0)  # 固定随机种子，保证每次运行结果一样
-perm = rng.permutation(len(archs))
-
-train_idx = perm[:N_TRAIN]  # 打乱后的前 200 个下标：假装我们只训练得起这些结构
-test_idx = perm[N_TRAIN:]  # 剩下的 15425 个下标：预测器从没见过，用来检验
-
-checks.check_split(train_idx, test_idx, N_TRAIN, len(archs))
-
-# numpy 数组可以直接用一组下标取出多行
-X_train, y_train = X[train_idx], y[train_idx]
-X_test, y_test = X[test_idx], y[test_idx]
+    # 把全部 15625 个结构都编码，得到形状为 (15625, 30) 的矩阵 X；标签 y 就是精度
+    X = np.array([encode(arch) for arch in archs])
+    y = acc
+    print("X 的形状:", X.shape, " y 的形状:", y.shape)
 
 
-# ======================================================================
-# TODO 3：训练预测器，并对测试集做预测
-# ----------------------------------------------------------------------
-# 回归模型先用随机森林（survey 第 9 页提到的非神经网络模型之一），它不用调参就能有不错的效果。
-# scikit-learn 里所有模型的用法都一样，三步：
-#     model = RandomForestRegressor(n_estimators=100, random_state=0)   创建模型
-#     model.fit(训练集的 X, 训练集的 y)                                  训练
-#     pred = model.predict(测试集的 X)                                  预测
-# ======================================================================
-model = RandomForestRegressor(n_estimators=100, random_state=0)  # 100 棵决策树组成的森林
-model.fit(X_train, y_train)  # 训练：学习"编码 -> 精度"的映射
-pred = model.predict(X_test)  # 预测：给每个没见过的结构估一个精度
+    # ======================================================================
+    # TODO 2：划分训练集和测试集
+    # ----------------------------------------------------------------------
+    # 现实中训练一个结构要几个小时，所以预测器只能用很少的"已训练结构"来学习。
+    # 这里假装我们只训练得起 N_TRAIN 个结构，其余的全部用来检验预测得准不准。
+    #
+    # perm 是 0 ~ 15624 被随机打乱后的顺序。请取它的前 N_TRAIN 个作为训练集的下标，
+    # 剩下的作为测试集的下标。
+    #
+    # 会用到切片：
+    #     a[:3]    a 的前 3 个元素
+    #     a[3:]    从第 3 个开始到最后的所有元素
+    # ======================================================================
+    N_TRAIN = 200
+    rng = np.random.default_rng(seed=0)  # 固定随机种子，保证每次运行结果一样
+    perm = rng.permutation(len(archs))
 
-checks.check_pred(model, pred, len(test_idx))
+    train_idx = perm[:N_TRAIN]  # 打乱后的前 200 个下标：假装我们只训练得起这些结构
+    test_idx = perm[N_TRAIN:]  # 剩下的 15425 个下标：预测器从没见过，用来检验
 
+    checks.check_split(train_idx, test_idx, N_TRAIN, len(archs))
 
-# ======================================================================
-# TODO 4：用 Kendall's Tau 评价预测器
-# ----------------------------------------------------------------------
-# NAS 只需要知道"哪个结构更好"，所以评价预测器看的是排序是否一致，而不是数值差多少。
-# Kendall's Tau：任取两个结构，预测的高低关系与真实的高低关系一致就加分，相反就扣分。
-#     +1 表示排序完全一致，0 表示和乱猜一样，-1 表示完全相反。
-#
-# kendalltau(a, b) 会返回两个值：相关系数和 p 值。我们只要第一个：
-#     tau, _ = kendalltau(a, b)
-# ======================================================================
-tau, _ = kendalltau(pred, y_test)  # 比较"预测的排序"和"真实的排序"，p 值用 _ 丢掉
-
-checks.check_tau(tau, pred, y_test)
+    # numpy 数组可以直接用一组下标取出多行
+    X_train, y_train = X[train_idx], y[train_idx]
+    X_test, y_test = X[test_idx], y[test_idx]
 
 
-# ======================================================================
-# 结果（已写好）
-# ======================================================================
-mse = np.mean((pred - y_test) ** 2)
-print()
-print(f"训练用了 {N_TRAIN} 个结构，在 {len(test_idx)} 个没见过的结构上测试")
-print(f"Kendall's Tau = {tau:.4f}")
-print(f"均方误差 MSE  = {mse:.4f}")
+    # ======================================================================
+    # TODO 3：训练预测器，并对测试集做预测
+    # ----------------------------------------------------------------------
+    # 回归模型先用随机森林（survey 第 9 页提到的非神经网络模型之一），它不用调参就能有不错的效果。
+    # scikit-learn 里所有模型的用法都一样，三步：
+    #     model = RandomForestRegressor(n_estimators=100, random_state=0)   创建模型
+    #     model.fit(训练集的 X, 训练集的 y)                                  训练
+    #     pred = model.predict(测试集的 X)                                  预测
+    # ======================================================================
+    model = RandomForestRegressor(n_estimators=100, random_state=0)  # 100 棵决策树组成的森林
+    model.fit(X_train, y_train)  # 训练：学习"编码 -> 精度"的映射
+    pred = model.predict(X_test)  # 预测：给每个没见过的结构估一个精度
 
-# 预测器认为最好的 10 个结构，真实排名是多少？
-true_rank = np.argsort(np.argsort(-y_test)) + 1  # 每个测试结构的真实名次，1 表示最好
-top10 = np.argsort(-pred)[:10]
-print("预测器选出的前 10 名，它们的真实名次:", sorted(true_rank[top10].tolist()))
+    checks.check_pred(model, pred, len(test_idx))
 
-plt.scatter(y_test, pred, s=2, alpha=0.3)
-plt.xlabel("true accuracy (%)")
-plt.ylabel("predicted accuracy (%)")
-plt.title(f"Random forest predictor, {N_TRAIN} training architectures, tau = {tau:.3f}")
-plt.savefig(OUTPUT_DIR / "step2_scatter.png", dpi=150)
-print("散点图已保存到 outputs/step2_scatter.png")
 
-# ---- 做完之后的小实验（改一个数再运行，观察 tau 怎么变）----
-# 1. 把 N_TRAIN 改成 50、1000，tau 分别是多少？这说明了预测器的什么痛点？
-# 2. 把 seed=0 改成别的数，tau 变化大吗？论文里为什么总要报告多次运行的平均值？
-# 3. 看散点图：精度很低的那些结构预测得准吗？这对 NAS 重要吗？
+    # ======================================================================
+    # TODO 4：用 Kendall's Tau 评价预测器
+    # ----------------------------------------------------------------------
+    # NAS 只需要知道"哪个结构更好"，所以评价预测器看的是排序是否一致，而不是数值差多少。
+    # Kendall's Tau：任取两个结构，预测的高低关系与真实的高低关系一致就加分，相反就扣分。
+    #     +1 表示排序完全一致，0 表示和乱猜一样，-1 表示完全相反。
+    #
+    # kendalltau(a, b) 会返回两个值：相关系数和 p 值。我们只要第一个：
+    #     tau, _ = kendalltau(a, b)
+    # ======================================================================
+    tau, _ = kendalltau(pred, y_test)  # 比较"预测的排序"和"真实的排序"，p 值用 _ 丢掉
+
+    checks.check_tau(tau, pred, y_test)
+
+
+    # ======================================================================
+    # 结果（已写好）
+    # ======================================================================
+    mse = np.mean((pred - y_test) ** 2)
+    print()
+    print(f"训练用了 {N_TRAIN} 个结构，在 {len(test_idx)} 个没见过的结构上测试")
+    print(f"Kendall's Tau = {tau:.4f}")
+    print(f"均方误差 MSE  = {mse:.4f}")
+
+    # 预测器认为最好的 10 个结构，真实排名是多少？
+    true_rank = __import__("scipy.stats", fromlist=["rankdata"]).rankdata(-y_test, method="min").astype(int)  # 每个测试结构的真实名次，1 表示最好
+    top10 = np.argsort(-pred)[:10]
+    print("预测器选出的前 10 名，它们的真实名次:", sorted(true_rank[top10].tolist()))
+
+    plt.scatter(y_test, pred, s=2, alpha=0.3)
+    plt.xlabel("true accuracy (%)")
+    plt.ylabel("predicted accuracy (%)")
+    plt.title(f"Random forest predictor, {N_TRAIN} training architectures, tau = {tau:.3f}")
+    plt.savefig(OUTPUT_DIR / "step2_scatter.png", dpi=150)
+    print("散点图已保存到 outputs/step2_scatter.png")
+
+    # ---- 做完之后的小实验（改一个数再运行，观察 tau 怎么变）----
+    # 1. 把 N_TRAIN 改成 50、1000，tau 分别是多少？这说明了预测器的什么痛点？
+    # 2. 把 seed=0 改成别的数，tau 变化大吗？论文里为什么总要报告多次运行的平均值？
+    # 3. 看散点图：精度很低的那些结构预测得准吗？这对 NAS 重要吗？
+
+
+if __name__ == "__main__":
+    main()

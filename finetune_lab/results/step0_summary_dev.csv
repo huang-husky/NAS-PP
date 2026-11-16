@@ -1,0 +1,10 @@
+method,100,200,500
+frozen_pythia_random,0.6682,0.7026,0.7208
+frozen_pythia_trained,0.6315,0.6548,0.6944
+hgb_canon+fp,0.6588,0.7016,0.7642
+rf_canon,0.4882,0.6106,0.6902
+rf_canon+fp,0.6791,0.6984,0.7401
+rf_counts+onehot,0.6679,0.7088,0.7562
+rf_onehot,0.4883,0.6066,0.6864
+rf_onehot+fp,0.6797,0.6988,0.7401
+ENVELOPE,0.6797,0.7088,0.7642

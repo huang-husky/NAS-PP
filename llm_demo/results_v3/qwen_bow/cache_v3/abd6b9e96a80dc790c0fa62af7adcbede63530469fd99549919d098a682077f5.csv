@@ -1,0 +1,11 @@
+target,features,head,n_train,seed,cache_key,tau,tau_raw,tau_status,n_at_10,warnings,metric_version,prediction_ties
+autoencoder,code_qwenbow,ridge,1000,0,abd6b9e96a80dc790c0fa62af7adcbede63530469fd99549919d098a682077f5,0.38961383211081196,0.38961383211081196,ok,57,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,code_qwenbow,ridge,1000,1,abd6b9e96a80dc790c0fa62af7adcbede63530469fd99549919d098a682077f5,0.3976327520430059,0.3976327520430059,ok,54,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,code_qwenbow,ridge,1000,2,abd6b9e96a80dc790c0fa62af7adcbede63530469fd99549919d098a682077f5,0.3848029804427828,0.3848029804427828,ok,58,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,code_qwenbow,ridge,1000,3,abd6b9e96a80dc790c0fa62af7adcbede63530469fd99549919d098a682077f5,0.3532002730588032,0.3532002730588032,ok,125,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,code_qwenbow,ridge,1000,4,abd6b9e96a80dc790c0fa62af7adcbede63530469fd99549919d098a682077f5,0.36729469705061024,0.36729469705061024,ok,64,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,code_qwenbow,ridge,1000,5,abd6b9e96a80dc790c0fa62af7adcbede63530469fd99549919d098a682077f5,0.38089877180174164,0.38089877180174164,ok,66,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,code_qwenbow,ridge,1000,6,abd6b9e96a80dc790c0fa62af7adcbede63530469fd99549919d098a682077f5,0.3833329892482253,0.3833329892482253,ok,53,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,code_qwenbow,ridge,1000,7,abd6b9e96a80dc790c0fa62af7adcbede63530469fd99549919d098a682077f5,0.36782185677682894,0.36782185677682894,ok,54,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,code_qwenbow,ridge,1000,8,abd6b9e96a80dc790c0fa62af7adcbede63530469fd99549919d098a682077f5,0.3774804528395092,0.3774804528395092,ok,129,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,code_qwenbow,ridge,1000,9,abd6b9e96a80dc790c0fa62af7adcbede63530469fd99549919d098a682077f5,0.3883538915877333,0.3883538915877333,ok,59,[],min-rank-stable-ties-v2,stable_input_order

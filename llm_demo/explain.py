@@ -6,8 +6,8 @@
 
 1. 学习曲线：把"操作计数"（5 维）和"计数 + one-hot"（35 维）也当成特征来源，
    和 LLM 特征、one-hot 放在一起比，三个数据集 × 三种回归头 × 全部样本数 × 20 个种子
-2. 计数的天花板：如果只知道操作计数，最好能排得多准？（同一种计数组合里的结构，
-   只能给出同一个预测值，取它们真实精度的平均值，这是"上帝视角"的最好情况）
+2. 计数的组均值参考：如果只知道操作计数，最好能排得多准？（同一种计数组合里的结构，
+   只能给出同一个预测值，取它们真实精度的平均值，这是使用全体标签的描述性参考，不是排序上限）
 3. 线性探针：LLM 特征里能读出多少"计数"信息、多少"每条边放了什么"的信息？
    以及特征的变化有多少能被计数解释、多少能被完整的 one-hot 解释
 
@@ -68,6 +68,10 @@ def op_counts(onehot):
 
 
 def build_features(archs):
+    from artifacts import verify_snapshot
+    verify_snapshot(FEATURE_DIR)
+    if not np.array_equal(np.load(FEATURE_DIR / "pool.npy"), np.arange(len(archs))):
+        raise ValueError("explain requires the full ordered NB201 pool")
     oh = np.array([one_hot(a) for a in archs])
     feats = {"onehot": oh, "counts": op_counts(oh), "counts+onehot": np.hstack([op_counts(oh), oh])}
     for name in LLMS_ALL:
@@ -78,63 +82,34 @@ def build_features(archs):
 # ---------------------------------------------------------------- 1. 学习曲线
 
 def run_one(X, y, n, seed, head):
-    """一次实验：用种子 seed 抽 n 个结构训练，其余全部当测试集。和 evaluate.py 的抽法完全一样。"""
-    perm = np.random.default_rng(seed).permutation(len(y))
-    tr, te = perm[:n], perm[n:]
-    model = make_head(head, seed)
-    if head == "rf":  # 外面已经多进程并行了，每棵森林内部就别再开多线程，免得抢 CPU
-        model.set_params(regressor__randomforestregressor__n_jobs=1)
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")  # 不收敛提示、预测值全部相同时 tau 无定义之类
-        pred = model.fit(X[tr], y[tr]).predict(X[te])
-        tau = kendalltau(pred, y[te]).statistic
-    return (0.0 if np.isnan(tau) else float(tau)), n_at_k(pred, y[te])
+    """Compatibility wrapper. Curve writers use evaluate_once to retain diagnostics."""
+    from experiment import evaluate_once
+    result = evaluate_once(X, y, n, seed, head)
+    return result["tau"], result["n_at_10"]
 
 
 def learning_curves(feats, n_seeds, n_jobs, sizes):
-    # 要算的组合：CIFAR-10 上所有特征；另两个数据集上手工特征 + 3 个代表性 LLM
-    plan = [(t, f) for t in TARGETS for f in (HAND + LLMS_ALL if t == "cifar10_acc" else HAND + LLMS_MAIN)]
-
-    # 已经算过的直接拿来用（evaluate.py 的结果，以及本脚本上次跑了一半的结果）
-    partial_file = OUT_DIR / "curves_partial.csv"
-    prev = pd.read_csv(partial_file) if partial_file.exists() else pd.DataFrame()
-    old = pd.concat([pd.read_csv(HERE / "results" / "results.csv"), prev])
-    old = old[old.seed < n_seeds]
-    have = old.groupby(["target", "features", "head", "n_train"]).seed.nunique()
-
-    jobs = [(t, f, h, n) for t, f in plan for h in HEADS for n in sizes
-            if have.get((t, f, h, n), 0) < n_seeds]
-    reused = old[[(r.target, r.features) in set(plan) and r.n_train in sizes for r in old.itertuples()]]
-    total = len(plan) * len(HEADS) * len(sizes)
-    print(f"学习曲线：一共 {total} 组，其中 {total - len(jobs)} 组之前算过直接复用，"
-          f"这次要算 {len(jobs)} 组（每组 {n_seeds} 个种子，同时用 {n_jobs} 个进程）\n", flush=True)
-
-    ys = {t: load_dataset(t)[1] for t in TARGETS}
-    rows, t0 = [], time.time()
-    # 用同一组进程跑完所有任务，省去反复启动进程的时间
-    with Parallel(n_jobs=n_jobs) as pool:
-        for k, (target, feat, head, n) in enumerate(jobs, 1):
-            out = pool(delayed(run_one)(feats[feat], ys[target], n, s, head) for s in range(n_seeds))
-            new = [dict(target=target, n_train=n, seed=s, features=feat, head=head, tau=tau, n_at_10=n10)
-                   for s, (tau, n10) in enumerate(out)]
-            rows += new
-            # 随时存盘（连同上次没跑完的部分），中途停了下次能接着跑
-            pd.concat([prev, pd.DataFrame(rows)]).to_csv(partial_file, index=False)
-            bar = "█" * int(20 * k / len(jobs))
-            print(f"[{k:3d}/{len(jobs)}] {bar:<20s} {time.strftime('%H:%M')}  {target:15s} {feat:22s} "
-                  f"{head:5s} n={n:<5d} τ={np.mean([r['tau'] for r in new]):.3f}   "
-                  f"已用 {(time.time() - t0) / 60:.0f} 分钟", flush=True)
-
-    df = pd.concat([reused, pd.DataFrame(rows)], ignore_index=True)
-    df = df.drop_duplicates(["target", "features", "head", "n_train", "seed"])
-    df.to_csv(OUT_DIR / "curves.csv", index=False)
+    from experiment import run_curves, atomic_csv
+    parts = []
+    for target in TARGETS:
+        names = HAND + (LLMS_ALL if target == "cifar10_acc" else LLMS_MAIN)
+        parts.append(run_curves("nb201", {target: load_dataset(target)[1]}, names, feats.__getitem__,
+                                sizes, n_seeds, n_jobs, OUT_DIR, HEADS, lambda n, k: k))
+    df = pd.concat(parts, ignore_index=True)
+    atomic_csv(df, OUT_DIR / "curves.csv")
+    # run_curves 每调用一次都会写同名的中间文件和质量表；三个数据集分三次调用，这里用合并后的结果重写
+    from experiment import write_tau_summary
+    atomic_csv(df, OUT_DIR / "curves_nb201_partial.csv")
+    write_tau_summary(df, OUT_DIR / "quality_nb201.csv")
     return df
 
 
-# ---------------------------------------------------------------- 2. 计数的天花板
+# ---------------------------------------------------------------- 2. 计数的组均值参考
 
-def count_ceiling(counts, y):
-    """只知道操作计数时的最好排序：同一种计数组合的结构，都预测为这组结构的真实平均精度。"""
+def group_mean_reference(counts, y):
+    """分组均值 oracle 参考（非 tau 上界、非留出集泛化分数）：同一种计数组合的结构，都预测为这组结构的真实平均精度。"""
+    from experiment import validate_xy
+    validate_xy(np.asarray(counts), np.asarray(y))
     _, group = np.unique(counts, axis=0, return_inverse=True)
     group = group.ravel()
     group_mean = np.bincount(group, weights=y) / np.bincount(group)
@@ -145,14 +120,19 @@ def count_ceiling(counts, y):
 
 def variance_explained(X, design):
     """X 的每一维都用 design 做线性回归，算 X 的总变化里有多少能被 design 解释（0~1）。"""
+    if len(X) != len(design) or not np.isfinite(X).all():
+        raise ValueError("invalid variance-explanation inputs")
     Z = StandardScaler().fit_transform(X)
     D = np.hstack([design, np.ones((len(design), 1))])
     coef, *_ = np.linalg.lstsq(D, Z, rcond=None)
-    return 1 - ((Z - D @ coef) ** 2).sum() / (Z ** 2).sum()
+    total = (Z ** 2).sum()
+    return float("nan") if total == 0 else 1 - ((Z - D @ coef) ** 2).sum() / total
 
 
 def probe(X, counts, edge_ops, onehot, n_train=2000, n_test=5000):
     """线性探针：只用线性模型从特征里"读"信息，读得出来说明特征里清楚地写着这个信息。"""
+    if len(X) <= n_train or n_train < 1 or n_test < 1:
+        raise ValueError("probe needs disjoint nonempty train/test sets")
     perm = np.random.default_rng(0).permutation(len(X))
     tr, te = perm[:n_train], perm[n_train:n_train + n_test]
     reader = make_pipeline(StandardScaler(), RidgeCV(alphas=np.logspace(-2, 4, 13)))
@@ -168,18 +148,8 @@ def probe(X, counts, edge_ops, onehot, n_train=2000, n_test=5000):
 # ---------------------------------------------------------------- 汇总和画图
 
 def paired(df, target, head, a, b):
-    """同一批训练划分下，特征 a 减特征 b 的 tau 差：平均差、a 赢的次数、Wilcoxon p 值。"""
-    out = []
-    sub = df[(df.target == target) & (df["head"] == head)]
-    for n in sorted(sub.n_train.unique()):
-        x = sub[(sub.features == a) & (sub.n_train == n)].sort_values("seed").tau.values
-        z = sub[(sub.features == b) & (sub.n_train == n)].sort_values("seed").tau.values
-        if len(x) == 0 or len(x) != len(z):
-            continue
-        d = x - z
-        p = wilcoxon(d).pvalue if np.any(d != 0) else 1.0
-        out.append(f"n={n}: {d.mean():+.3f}（{(d > 0).sum()}/{len(d)}，p={p:.2g}）")
-    return "；".join(out)
+    from statistics_report import paired_text
+    return paired_text(df, target, head, a, b)
 
 
 def plot(df, ceilings):
@@ -195,7 +165,7 @@ def plot(df, ceilings):
                 stat = g.groupby("n_train")["tau"].agg(["mean", "std"])
                 ax.errorbar(stat.index, stat["mean"], yerr=stat["std"], marker="o", capsize=3, **style)
             ax.axhline(ceilings[target], color="tab:green", linestyle=":", linewidth=1.5,
-                       label="ceiling of op counts")
+                       label="op-count group-mean reference")
             ax.set_xscale("log")
             ax.set_title(f"{target}  |  head = {head}")
             ax.grid(alpha=0.3)
@@ -209,11 +179,19 @@ def plot(df, ceilings):
 
 
 def main():
+    global FEATURE_DIR
     parser = argparse.ArgumentParser()
     parser.add_argument("--seeds", type=int, default=20)
     parser.add_argument("--jobs", type=int, default=8)
     parser.add_argument("--max-n", type=int, default=max(TRAIN_SIZES), help="只跑不超过这个数的训练样本数（冒烟测试用）")
+    parser.add_argument("--out", default=str(HERE / "results_v3" / "step1"))
+    parser.add_argument("--feature-dir", default=None)
     args = parser.parse_args()
+    if args.feature_dir:
+        FEATURE_DIR = Path(args.feature_dir)
+    global OUT_DIR
+    OUT_DIR = Path(args.out)
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
     sizes = [n for n in TRAIN_SIZES if n <= args.max_n]
 
     archs, _ = load_dataset()
@@ -222,17 +200,17 @@ def main():
     edge_ops = oh.reshape(-1, 6, 5).argmax(axis=2)
 
     # 2 和 3 很快，先算，几分钟内就能看到
-    lines = ["===== 只靠操作计数的天花板（全部 15625 个结构，上帝视角）====="]
+    lines = ["===== 只靠操作计数的组均值参考（全部 15625 个结构，上帝视角）====="]
     ceilings = {}
     for target in TARGETS:
         y = load_dataset(target)[1]
-        ceilings[target], n_groups = count_ceiling(counts, y)
-        lines.append(f"  {target:15s} τ 上限 = {ceilings[target]:.3f}（{n_groups} 种不同的计数组合）")
+        ceilings[target], n_groups = group_mean_reference(counts, y)
+        lines.append(f"  {target:15s} τ 参考 = {ceilings[target]:.3f}（{n_groups} 种不同的计数组合）")
 
     lines += ["", "===== 线性探针（2000 个结构训练读取器，另外 5000 个测试）=====",
               "  count_R2      从特征读出 5 个操作计数的 R²（1 = 完全读得出）",
               "  edge_acc      读出每条边放了什么操作的准确率（6 条边的平均 / 最差，瞎猜 = 0.2）",
-              "  var_by_*      特征的总变化里，能被计数 / 完整 one-hot 线性解释的比例", ""]
+              "  var_by_*      样本内描述性拟合R²（不是留出泛化分数）", ""]
     probes = pd.DataFrame({name: probe(feats[name], counts, edge_ops, oh) for name in LLMS_ALL}).T
     lines.append(probes.round(3).to_string())
     text = "\n".join(lines)
@@ -247,7 +225,7 @@ def main():
             sub = df[(df.target == target) & (df["head"] == head)]
             table = sub.groupby(["features", "n_train"]).tau.mean().unstack()
             table = table.loc[[f for f in order if f in table.index]]
-            lines += ["", f"[{target} | {head}]   计数天花板 = {ceilings[target]:.3f}", table.round(3).to_string()]
+            lines += ["", f"[{target} | {head}]   计数组均值参考 = {ceilings[target]:.3f}", table.round(3).to_string()]
 
     lines += ["", "===== 配对比较：差值（前者赢的次数，Wilcoxon p）====="]
     for target in TARGETS:

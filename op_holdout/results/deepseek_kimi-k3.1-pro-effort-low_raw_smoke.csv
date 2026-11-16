@@ -1,0 +1,6 @@
+held,variant,seed,rho,n_valid
+nor_conv_3x3,rf_onehot_k30,0,0.5340762143289942,
+nor_conv_3x3,rf_hand_k30,0,0.3431474030808348,
+nor_conv_3x3,rf_onehot_n500,0,0.48595096867526866,
+nor_conv_3x3,ds_k0,0,0.7984962406015037,20.0
+nor_conv_3x3,ds_k30,0,0.7777360459744155,20.0

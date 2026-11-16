@@ -1,0 +1,11 @@
+target,features,head,n_train,seed,cache_key,tau,tau_raw,tau_status,n_at_10,warnings,metric_version,prediction_ties
+autoencoder,edges_qwenbow,rf,1000,0,02870fade09ecb48a303eab4ee34df83d6bf3907ae9ef3b5ee92ee9c6e97154a,0.41068793232362877,0.41068793232362877,ok,57,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,edges_qwenbow,rf,1000,1,02870fade09ecb48a303eab4ee34df83d6bf3907ae9ef3b5ee92ee9c6e97154a,0.40727583859321953,0.40727583859321953,ok,53,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,edges_qwenbow,rf,1000,2,02870fade09ecb48a303eab4ee34df83d6bf3907ae9ef3b5ee92ee9c6e97154a,0.4031381851114825,0.4031381851114825,ok,57,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,edges_qwenbow,rf,1000,3,02870fade09ecb48a303eab4ee34df83d6bf3907ae9ef3b5ee92ee9c6e97154a,0.3956581636327215,0.3956581636327215,ok,77,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,edges_qwenbow,rf,1000,4,02870fade09ecb48a303eab4ee34df83d6bf3907ae9ef3b5ee92ee9c6e97154a,0.39495817446660536,0.39495817446660536,ok,63,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,edges_qwenbow,rf,1000,5,02870fade09ecb48a303eab4ee34df83d6bf3907ae9ef3b5ee92ee9c6e97154a,0.39441795499179466,0.39441795499179466,ok,66,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,edges_qwenbow,rf,1000,6,02870fade09ecb48a303eab4ee34df83d6bf3907ae9ef3b5ee92ee9c6e97154a,0.41372561411161135,0.41372561411161135,ok,32,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,edges_qwenbow,rf,1000,7,02870fade09ecb48a303eab4ee34df83d6bf3907ae9ef3b5ee92ee9c6e97154a,0.39612023302420074,0.39612023302420074,ok,278,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,edges_qwenbow,rf,1000,8,02870fade09ecb48a303eab4ee34df83d6bf3907ae9ef3b5ee92ee9c6e97154a,0.39085575777908055,0.39085575777908055,ok,99,[],min-rank-stable-ties-v2,stable_input_order
+autoencoder,edges_qwenbow,rf,1000,9,02870fade09ecb48a303eab4ee34df83d6bf3907ae9ef3b5ee92ee9c6e97154a,0.40185347764413204,0.40185347764413204,ok,133,[],min-rank-stable-ties-v2,stable_input_order

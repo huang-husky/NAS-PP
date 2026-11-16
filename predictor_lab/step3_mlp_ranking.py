@@ -73,7 +73,7 @@ def pairwise_ranking_loss(pred, target):
     better = target[:, None] > target[None, :]
     # relu(x) = max(0, x)。差距已经够大时罚 0；排反了或差距不够时罚得越来越多
     penalty = torch.relu(MARGIN - diff)
-    return penalty[better].mean()
+    return penalty[better].mean() if better.any() else pred.sum() * 0.0
 
 
 # ----------------------------------------------------------------------
@@ -85,7 +85,10 @@ def train_mlp(X_train, y_train, loss_fn, seed):
     optimizer = torch.optim.Adam(model.parameters(), lr=LR)
 
     # 把精度标准化成"平均 0、标准差 1"，神经网络对这种尺度的数学得更顺
-    y_norm = (y_train - y_train.mean()) / y_train.std()
+    if not np.isfinite(y_train).all() or not len(y_train):
+        raise ValueError("invalid training labels")
+    scale = y_train.std()
+    y_norm = (y_train - y_train.mean()) / (scale if scale > 0 else 1.0)
     X_t = torch.from_numpy(X_train)
     y_t = torch.from_numpy(y_norm.astype(np.float32))
 
@@ -106,44 +109,49 @@ def predict_mlp(model, X):
 # ----------------------------------------------------------------------
 # 主实验：3 种方法 x 5 个种子
 # ----------------------------------------------------------------------
-archs, acc = load_dataset()
-X = np.array([encode(a) for a in archs])
-y = acc.astype(np.float32)
+def main():
+    archs, acc = load_dataset()
+    X = np.array([encode(a) for a in archs])
+    y = acc.astype(np.float32)
 
-methods = ["Random forest", "MLP + MSE loss", "MLP + ranking loss"]
-taus = {m: [] for m in methods}
+    methods = ["Random forest", "MLP + MSE loss", "MLP + ranking loss"]
+    taus = {m: [] for m in methods}
 
-for seed in SEEDS:
-    perm = np.random.default_rng(seed).permutation(len(archs))
-    train_idx, test_idx = perm[:N_TRAIN], perm[N_TRAIN:]
-    X_train, y_train = X[train_idx], y[train_idx]
-    X_test, y_test = X[test_idx], y[test_idx]
+    for seed in SEEDS:
+        perm = np.random.default_rng(seed).permutation(len(archs))
+        train_idx, test_idx = perm[:N_TRAIN], perm[N_TRAIN:]
+        X_train, y_train = X[train_idx], y[train_idx]
+        X_test, y_test = X[test_idx], y[test_idx]
 
-    rf = RandomForestRegressor(n_estimators=100, random_state=seed).fit(X_train, y_train)
-    preds = {
-        "Random forest": rf.predict(X_test),
-        "MLP + MSE loss": predict_mlp(train_mlp(X_train, y_train, mse_loss, seed), X_test),
-        "MLP + ranking loss": predict_mlp(train_mlp(X_train, y_train, pairwise_ranking_loss, seed), X_test),
-    }
+        rf = RandomForestRegressor(n_estimators=100, random_state=seed).fit(X_train, y_train)
+        preds = {
+            "Random forest": rf.predict(X_test),
+            "MLP + MSE loss": predict_mlp(train_mlp(X_train, y_train, mse_loss, seed), X_test),
+            "MLP + ranking loss": predict_mlp(train_mlp(X_train, y_train, pairwise_ranking_loss, seed), X_test),
+        }
 
-    line = f"种子 {seed}:"
+        line = f"种子 {seed}:"
+        for m in methods:
+            tau, _ = kendalltau(preds[m], y_test)
+            taus[m].append(tau)
+            line += f"  {m} = {tau:.4f}"
+        print(line)
+
+    print()
+    print(f"训练结构 {N_TRAIN} 个，5 次运行的 Kendall's Tau（平均值 ± 标准差）:")
     for m in methods:
-        tau, _ = kendalltau(preds[m], y_test)
-        taus[m].append(tau)
-        line += f"  {m} = {tau:.4f}"
-    print(line)
+        print(f"  {m:20s} {np.mean(taus[m]):.4f} ± {np.std(taus[m]):.4f}")
 
-print()
-print(f"训练结构 {N_TRAIN} 个，5 次运行的 Kendall's Tau（平均值 ± 标准差）:")
-for m in methods:
-    print(f"  {m:20s} {np.mean(taus[m]):.4f} ± {np.std(taus[m]):.4f}")
+    # 柱状图：柱子高度是平均值，黑线是标准差
+    plt.figure(figsize=(6, 4))
+    plt.bar(methods, [np.mean(taus[m]) for m in methods],
+            yerr=[np.std(taus[m]) for m in methods], capsize=6)
+    plt.ylabel("Kendall's Tau")
+    plt.title(f"NAS-Bench-201 CIFAR-10, {N_TRAIN} training architectures, {len(SEEDS)} seeds")
+    plt.tight_layout()
+    plt.savefig(OUTPUT_DIR / "step3_compare.png", dpi=150)
+    print("柱状图已保存到 outputs/step3_compare.png")
 
-# 柱状图：柱子高度是平均值，黑线是标准差
-plt.figure(figsize=(6, 4))
-plt.bar(methods, [np.mean(taus[m]) for m in methods],
-        yerr=[np.std(taus[m]) for m in methods], capsize=6)
-plt.ylabel("Kendall's Tau")
-plt.title(f"NAS-Bench-201 CIFAR-10, {N_TRAIN} training architectures, {len(SEEDS)} seeds")
-plt.tight_layout()
-plt.savefig(OUTPUT_DIR / "step3_compare.png", dpi=150)
-print("柱状图已保存到 outputs/step3_compare.png")
+
+if __name__ == "__main__":
+    main()

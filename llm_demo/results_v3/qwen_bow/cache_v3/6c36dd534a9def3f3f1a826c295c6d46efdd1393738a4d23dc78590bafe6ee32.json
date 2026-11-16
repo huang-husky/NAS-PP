@@ -1,0 +1,14 @@
+{
+  "space": "nb101",
+  "features": "code_qwenbow",
+  "target": "test_acc",
+  "head": "rf",
+  "n_train": 500,
+  "X": "f500269043b86b4da09882840136c3ebaa283d33ac9c3697072ffa741d15d5ae",
+  "y": "3ca9154e1d652c88180d79f43d05eb28a24b6ac41c9b60cd82d1693169ecb25b",
+  "source": "4328123ae2617e22669573b8b1c221dccc9b2f98dda6356b65a1df734a080c41",
+  "metric": "min-rank-stable-ties-v2",
+  "numpy": "2.4.4",
+  "scipy": "1.17.1",
+  "sklearn": "1.8.0"
+}

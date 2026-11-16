@@ -1,0 +1,11 @@
+target,features,head,n_train,seed,cache_key,tau,tau_raw,tau_status,n_at_10,warnings,metric_version,prediction_ties
+segmentsemantic,sorted_qwenbow,rf,1000,0,41c6600eb5a64eb157e4f42c2740efb6dbc3d4d085ae0cd6bfdc07d42cafad66,0.5052846700185468,0.5052846700185468,ok,20,[],min-rank-stable-ties-v2,stable_input_order
+segmentsemantic,sorted_qwenbow,rf,1000,1,41c6600eb5a64eb157e4f42c2740efb6dbc3d4d085ae0cd6bfdc07d42cafad66,0.5119545731147798,0.5119545731147798,ok,17,[],min-rank-stable-ties-v2,stable_input_order
+segmentsemantic,sorted_qwenbow,rf,1000,2,41c6600eb5a64eb157e4f42c2740efb6dbc3d4d085ae0cd6bfdc07d42cafad66,0.5130274498656084,0.5130274498656084,ok,10,[],min-rank-stable-ties-v2,stable_input_order
+segmentsemantic,sorted_qwenbow,rf,1000,3,41c6600eb5a64eb157e4f42c2740efb6dbc3d4d085ae0cd6bfdc07d42cafad66,0.5137894332604304,0.5137894332604304,ok,40,[],min-rank-stable-ties-v2,stable_input_order
+segmentsemantic,sorted_qwenbow,rf,1000,4,41c6600eb5a64eb157e4f42c2740efb6dbc3d4d085ae0cd6bfdc07d42cafad66,0.5261636998403585,0.5261636998403585,ok,20,[],min-rank-stable-ties-v2,stable_input_order
+segmentsemantic,sorted_qwenbow,rf,1000,5,41c6600eb5a64eb157e4f42c2740efb6dbc3d4d085ae0cd6bfdc07d42cafad66,0.5164390472801167,0.5164390472801167,ok,2,[],min-rank-stable-ties-v2,stable_input_order
+segmentsemantic,sorted_qwenbow,rf,1000,6,41c6600eb5a64eb157e4f42c2740efb6dbc3d4d085ae0cd6bfdc07d42cafad66,0.5127029279730656,0.5127029279730656,ok,44,[],min-rank-stable-ties-v2,stable_input_order
+segmentsemantic,sorted_qwenbow,rf,1000,7,41c6600eb5a64eb157e4f42c2740efb6dbc3d4d085ae0cd6bfdc07d42cafad66,0.5149877540925559,0.5149877540925559,ok,74,[],min-rank-stable-ties-v2,stable_input_order
+segmentsemantic,sorted_qwenbow,rf,1000,8,41c6600eb5a64eb157e4f42c2740efb6dbc3d4d085ae0cd6bfdc07d42cafad66,0.5052284340499242,0.5052284340499242,ok,2,[],min-rank-stable-ties-v2,stable_input_order
+segmentsemantic,sorted_qwenbow,rf,1000,9,41c6600eb5a64eb157e4f42c2740efb6dbc3d4d085ae0cd6bfdc07d42cafad66,0.49053928403475205,0.49053928403475205,ok,2,[],min-rank-stable-ties-v2,stable_input_order

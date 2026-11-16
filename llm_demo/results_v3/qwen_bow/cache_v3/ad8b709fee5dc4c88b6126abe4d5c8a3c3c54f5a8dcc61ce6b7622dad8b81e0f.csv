@@ -1,0 +1,11 @@
+target,features,head,n_train,seed,cache_key,tau,tau_raw,tau_status,n_at_10,warnings,metric_version,prediction_ties
+test_acc,posword_qwenbow,ridge,1000,0,ad8b709fee5dc4c88b6126abe4d5c8a3c3c54f5a8dcc61ce6b7622dad8b81e0f,0.5514461318540307,0.5514461318540307,ok,5,[],min-rank-stable-ties-v2,stable_input_order
+test_acc,posword_qwenbow,ridge,1000,1,ad8b709fee5dc4c88b6126abe4d5c8a3c3c54f5a8dcc61ce6b7622dad8b81e0f,0.5679474010694663,0.5679474010694663,ok,2,[],min-rank-stable-ties-v2,stable_input_order
+test_acc,posword_qwenbow,ridge,1000,2,ad8b709fee5dc4c88b6126abe4d5c8a3c3c54f5a8dcc61ce6b7622dad8b81e0f,0.5621573894206944,0.5621573894206944,ok,3,[],min-rank-stable-ties-v2,stable_input_order
+test_acc,posword_qwenbow,ridge,1000,3,ad8b709fee5dc4c88b6126abe4d5c8a3c3c54f5a8dcc61ce6b7622dad8b81e0f,0.5221391231107757,0.5221391231107757,ok,9,[],min-rank-stable-ties-v2,stable_input_order
+test_acc,posword_qwenbow,ridge,1000,4,ad8b709fee5dc4c88b6126abe4d5c8a3c3c54f5a8dcc61ce6b7622dad8b81e0f,0.5303893508325483,0.5303893508325483,ok,1,[],min-rank-stable-ties-v2,stable_input_order
+test_acc,posword_qwenbow,ridge,1000,5,ad8b709fee5dc4c88b6126abe4d5c8a3c3c54f5a8dcc61ce6b7622dad8b81e0f,0.5704464020992304,0.5704464020992304,ok,5,[],min-rank-stable-ties-v2,stable_input_order
+test_acc,posword_qwenbow,ridge,1000,6,ad8b709fee5dc4c88b6126abe4d5c8a3c3c54f5a8dcc61ce6b7622dad8b81e0f,0.5629913889381927,0.5629913889381927,ok,1,[],min-rank-stable-ties-v2,stable_input_order
+test_acc,posword_qwenbow,ridge,1000,7,ad8b709fee5dc4c88b6126abe4d5c8a3c3c54f5a8dcc61ce6b7622dad8b81e0f,0.546116150078353,0.546116150078353,ok,4,[],min-rank-stable-ties-v2,stable_input_order
+test_acc,posword_qwenbow,ridge,1000,8,ad8b709fee5dc4c88b6126abe4d5c8a3c3c54f5a8dcc61ce6b7622dad8b81e0f,0.5161020933310352,0.5161020933310352,ok,3,[],min-rank-stable-ties-v2,stable_input_order
+test_acc,posword_qwenbow,ridge,1000,9,ad8b709fee5dc4c88b6126abe4d5c8a3c3c54f5a8dcc61ce6b7622dad8b81e0f,0.5381770601199413,0.5381770601199413,ok,4,[],min-rank-stable-ties-v2,stable_input_order

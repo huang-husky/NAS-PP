@@ -1,22 +1,5 @@
-"""检验：COLE（Somu 等，GECCO 2026）为什么没有出现我们说的上限？
-
-COLE 用冻结的 CodeLlama-7B 读 NB201 结构的 PyTorch 代码，N=3516 时 τ 到了 0.797，
-远高于我们算的"计数上限"0.63。我们的规律 2 说"上限由写法的词频决定"，所以预言：
-COLE 的写法把位置信息写进了词频（每条边一个名字 self.op_0_2，跳连写成 + node_1），
-它的词频上限应该高得多；而且在它的写法下，LLM 特征仍然 ≈ 它的词频。
-
-A. 词频上限（全部结构，不用大模型，几分钟）
-   NB201 全部 15625 个（3 个数据集）、TransNAS 全部 4096 个（7 个任务）：
-   我们的 code 写法 vs COLE 写法，各有几组、上限多少。
-B. 学习曲线（结构池和规律 2 相同：NB201 5000 个，TransNAS 4096 个、3 个任务）
-   one-hot、code 词频、code 随机/训练完成 Pythia、cole 词频、cole 随机/训练完成 Pythia；
-   回归头：岭回归、随机森林、MLP。
-   cole 的 Pythia 特征要先用 run_formats.py 提取：
-       python run_formats.py --spaces nb201,transnas --formats cole
-
-运行方式（在 llm_demo 文件夹下）:
-    python step7_cole.py --ceiling-only     只做 A
-    python step7_cole.py                    A + B
+"""比较code和COLE风格文本的分组均值oracle参考及学习曲线。
+参考使用全体标签，不是泛化估计或严格上界。--ceiling-only为兼容旧命令保留，仅计算参考。
 """
 
 import argparse
@@ -27,7 +10,7 @@ from transformers import AutoTokenizer
 
 import step3_formats as S
 from embed import load_archs
-from explain import count_ceiling
+from explain import group_mean_reference
 from formats import cell_text
 from make_bow import TOKENIZER, bow
 from nb201 import load_dataset
@@ -42,7 +25,7 @@ TARGETS = {"nb201": ["cifar10_acc"], "transnas": ["class_scene", "segmentsemanti
 def ceilings(say):
     import pandas as pd
     tok = AutoTokenizer.from_pretrained(TOKENIZER)
-    say("===== A. 词频上限（全部结构；只知道词频时，同一组的结构都预测为组内真实平均值）=====")
+    say("===== A. 词频组均值参考（全部结构；只知道词频时，同一组的结构都预测为组内真实平均值）=====")
     for space in ["nb201", "transnas"]:
         archs = load_archs(space)
         if space == "nb201":
@@ -55,18 +38,22 @@ def ceilings(say):
             X[fmt], words = bow([cell_text(a, fmt) for a in archs], tok)
             say(f"[{space}] {fmt:5s} 写法：{X[fmt].shape[1]} 种会变的 token：{' '.join(repr(w) for w in words)}")
         for t, y in ys.items():
-            (a, ga), (b, gb) = count_ceiling(X["code"], y), count_ceiling(X["cole"], y)
-            say(f"  {space:8s} {t:16s} code 写法：上限 {a:.3f}（{ga} 组）   cole 写法：上限 {b:.3f}（{gb} 组）"
+            (a, ga), (b, gb) = group_mean_reference(X["code"], y), group_mean_reference(X["cole"], y)
+            say(f"  {space:8s} {t:16s} code 写法：组均值参考 {a:.3f}（{ga} 组）   cole 写法：组均值参考 {b:.3f}（{gb} 组）"
                 f"   结构数 {len(y)}")
 
 
+@S.isolated_config
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--ceiling-only", action="store_true")
     parser.add_argument("--seeds", type=int, default=20)
     parser.add_argument("--jobs", type=int, default=10)
-    parser.add_argument("--out", default=str(HERE / "results" / "step7"))
+    parser.add_argument("--out", default=str(HERE / "results_v3" / "step7"))
+    parser.add_argument("--feat-dir", default=None)
     args = parser.parse_args()
+    if args.feat_dir:
+        S.FMT_DIR = Path(args.feat_dir)
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
     lines = []

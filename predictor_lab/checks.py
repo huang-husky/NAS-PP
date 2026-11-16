@@ -48,6 +48,12 @@ def check_split(train_idx, test_idx, n_train, n_total):
     if train_idx is None or test_idx is None:
         _fail(2, "train_idx 或 test_idx 还是 None")
     train_idx, test_idx = np.asarray(train_idx), np.asarray(test_idx)
+    if (train_idx.ndim != 1 or test_idx.ndim != 1 or
+        train_idx.dtype.kind not in "iu" or test_idx.dtype.kind not in "iu"):
+        _fail(2, "划分必须是一维整数下标")
+    joined = np.concatenate([train_idx, test_idx])
+    if len(np.unique(joined)) != n_total or not np.array_equal(np.sort(joined), np.arange(n_total)):
+        _fail(2, "下标重复、越界或未覆盖全集")
     if len(train_idx) != n_train:
         _fail(2, f"训练集应该有 {n_train} 个结构，现在有 {len(train_idx)} 个")
     if len(test_idx) != n_total - n_train:
@@ -67,6 +73,8 @@ def check_pred(model, pred, n_test):
     pred = np.asarray(pred)
     if pred.shape != (n_test,):
         _fail(3, f"应该对测试集里的 {n_test} 个结构各预测一个精度，现在 pred 的形状是 {pred.shape}")
+    if not np.isfinite(pred).all():
+        _fail(3, "预测含NaN或Inf")
     if np.std(pred) == 0:
         _fail(3, "所有结构的预测值都一样，模型可能没有训练（检查有没有调用 fit）")
     _ok(3)
@@ -82,6 +90,6 @@ def check_tau(tau, pred, y_test):
     from scipy.stats import kendalltau
 
     expected = kendalltau(pred, y_test)[0]
-    if abs(tau - expected) > 1e-9:
+    if not np.isfinite(tau) or not np.isfinite(expected) or abs(tau - expected) > 1e-9:
         _fail(4, f"数值不对，应该是 pred 和 y_test 之间的 Kendall's Tau（约 {expected:.4f}）")
     _ok(4)

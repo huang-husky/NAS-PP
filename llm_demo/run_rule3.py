@@ -20,6 +20,7 @@ from models import MODEL_DIR, has_weights
 
 HERE = Path(__file__).parent
 LOG = HERE / "run_rule3.log"
+FEATURES = str(HERE / "features_generated_v3" / "formats")
 SMALL = ["pythia70m_step0", "pythia70m_step143000", "pythia160m_step0", "pythia160m_step143000"]
 BIG = ["pythia1b_step0", "pythia1b_step143000"]
 OLD = ["pythia410m_step0", "pythia410m_step143000"]
@@ -39,19 +40,22 @@ def run(*args):
         raise SystemExit(code)
 
 
-def wait_for(models):
+def wait_for(models, timeout=21600):
     say("等模型下载完：" + ", ".join(models))
+    deadline = time.monotonic() + timeout
     while not all((MODEL_DIR / m / ".download_done").exists() and has_weights(MODEL_DIR / m) for m in models):
+        if time.monotonic() >= deadline:
+            raise TimeoutError("Model downloads not ready within timeout")
         time.sleep(30)
 
 
 def main():
     wait_for(SMALL)
-    run("run_formats.py", "--models", ",".join(SMALL))
-    run("step3_formats.py", "--models", ",".join(SMALL + OLD))
+    run("run_formats.py", "--models", ",".join(SMALL + OLD), "--out", FEATURES)
+    run("step3_formats.py", "--models", ",".join(SMALL + OLD), "--feat-dir", FEATURES)
     wait_for(BIG)  # 1B 比较大，下载和前面的步骤同时进行
-    run("run_formats.py", "--models", ",".join(BIG))
-    run("step3_formats.py", "--models", "all")
+    run("run_formats.py", "--models", ",".join(BIG), "--out", FEATURES)
+    run("step3_formats.py", "--models", "all", "--feat-dir", FEATURES)
     say("规律 3 全部完成 EXIT")
 
 
